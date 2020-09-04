@@ -5,7 +5,7 @@
 fit_sample_tmb <- function(data, par, random) {
   obj <-  MakeADFun(data = data,
                     parameters = par,
-                    DLL = "multi",
+                    DLL = "dfertility",
                     random = random,
                     hessian = FALSE)
 
