@@ -26,16 +26,19 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(u_tips);
 
   DATA_SPARSE_MATRIX(R_country);
+  DATA_SPARSE_MATRIX(Z_country);
+  PARAMETER_VECTOR(u_country);
+  PARAMETER(log_prec_country);
 
   DATA_SPARSE_MATRIX(Z_omega1);
   PARAMETER_ARRAY(omega1);
-  PARAMETER(log_prec_omega1);
-  PARAMETER(lag_logit_omega1_phi_age);
+  DATA_SCALAR(log_prec_omega1);
+  DATA_SCALAR(lag_logit_omega1_phi_age);
 
   DATA_SPARSE_MATRIX(Z_omega2);
   PARAMETER_ARRAY(omega2);
-  PARAMETER(log_prec_omega2);
-  PARAMETER(lag_logit_omega2_phi_period);
+  DATA_SCALAR(log_prec_omega2);
+  DATA_SCALAR(lag_logit_omega2_phi_period);
 
   DATA_SPARSE_MATRIX(Z_spatial);
   DATA_SPARSE_MATRIX(R_spatial);
@@ -46,19 +49,19 @@ Type objective_function<Type>::operator() ()
   
   DATA_SPARSE_MATRIX(Z_interaction1);
   PARAMETER_ARRAY(eta1);
-  PARAMETER(log_prec_eta1);
-  PARAMETER(lag_logit_eta1_phi_age);
-  PARAMETER(lag_logit_eta1_phi_period);
+  DATA_SCALAR(log_prec_eta1);
+  DATA_SCALAR(lag_logit_eta1_phi_age);
+  DATA_SCALAR(lag_logit_eta1_phi_period);
 
   DATA_SPARSE_MATRIX(Z_interaction2);
   PARAMETER_ARRAY(eta2);
-  PARAMETER(log_prec_eta2);
-  PARAMETER(lag_logit_eta2_phi_period);
+  DATA_SCALAR(log_prec_eta2);
+  DATA_SCALAR(lag_logit_eta2_phi_period);
 
   DATA_SPARSE_MATRIX(Z_interaction3);
   PARAMETER_ARRAY(eta3);
-  PARAMETER(log_prec_eta3);
-  PARAMETER(lag_logit_eta3_phi_age);
+  DATA_SCALAR(log_prec_eta3);
+  DATA_SCALAR(lag_logit_eta3_phi_age);
  
   // observations
 
@@ -106,6 +109,11 @@ Type objective_function<Type>::operator() ()
 
   ///////////////////
 
+  nll -= dlgamma(log_prec_country, Type(1), Type(20000), true);
+  Type prec_country = exp(log_prec_country); 
+
+  nll -= Type(-0.5) * (u_country * (R_country * u_country)).sum();
+
   // PARAMETER_VECTOR(u_spatial_iid); 
   // PARAMETER(logit_spatial_rho);
 
@@ -138,10 +146,10 @@ Type objective_function<Type>::operator() ()
 
   ///
 
-  nll -= dlgamma(log_prec_omega1, Type(1), Type(20000), true);
+  // nll -= dlgamma(log_prec_omega1, Type(1), Type(20000), true);
   Type prec_omega1 = exp(log_prec_omega1);
 
-  nll -= dnorm(lag_logit_omega1_phi_age, Type(0), Type(sqrt(1/0.15)), true);
+  // nll -= dnorm(lag_logit_omega1_phi_age, Type(0), Type(sqrt(1/0.15)), true);
   Type omega1_phi_age = 2*exp(lag_logit_omega1_phi_age)/(1+exp(lag_logit_omega1_phi_age))-1;
   
   nll += SEPARABLE(AR1(Type(omega1_phi_age)), GMRF(R_country))(omega1);
@@ -163,10 +171,10 @@ Type objective_function<Type>::operator() ()
 
   ///
 
-  nll -= dlgamma(log_prec_omega2, Type(1), Type(20000), true);
+  // nll -= dlgamma(log_prec_omega2, Type(1), Type(20000), true);
   Type prec_omega2 = exp(log_prec_omega2);
 
-  nll -= dnorm(lag_logit_omega2_phi_period, Type(0), Type(sqrt(1/0.15)), true);
+  // nll -= dnorm(lag_logit_omega2_phi_period, Type(0), Type(sqrt(1/0.15)), true);
   Type omega2_phi_period = 2*exp(lag_logit_omega2_phi_period)/(1+exp(lag_logit_omega2_phi_period))-1;
   
   nll += SEPARABLE(AR1(Type(omega2_phi_period)), GMRF(R_country))(omega2);
@@ -189,13 +197,13 @@ Type objective_function<Type>::operator() ()
   ////////////////////
   // ETA-1 - Age x time interaction
 
-  nll -= dlgamma(log_prec_eta1, Type(1), Type(20000), true);
+  // nll -= dlgamma(log_prec_eta1, Type(1), Type(20000), true);
   Type prec_eta1 = exp(log_prec_eta1);
 
-  nll -= dnorm(lag_logit_eta1_phi_age, Type(0), Type(sqrt(1/0.15)), true);
+  // nll -= dnorm(lag_logit_eta1_phi_age, Type(0), Type(sqrt(1/0.15)), true);
   Type eta1_phi_age = 2*exp(lag_logit_eta1_phi_age)/(1+exp(lag_logit_eta1_phi_age))-1;
 
-  nll -= dnorm(lag_logit_eta1_phi_period, Type(0), Type(sqrt(1/0.15)), true);
+  // nll -= dnorm(lag_logit_eta1_phi_period, Type(0), Type(sqrt(1/0.15)), true);
   Type eta1_phi_period = 2*exp(lag_logit_eta1_phi_period)/(1+exp(lag_logit_eta1_phi_period))-1;
   
   nll += SEPARABLE(AR1(Type(eta1_phi_age)), SEPARABLE(AR1(Type(eta1_phi_period)), GMRF(R_country)))(eta1);
@@ -204,10 +212,10 @@ Type objective_function<Type>::operator() ()
   ///////////////////
    // ETA-2 - Space x time interaction
 
-  nll -= dlgamma(log_prec_eta2, Type(1), Type(20000), true);
+  // nll -= dlgamma(log_prec_eta2, Type(1), Type(20000), true);
   Type prec_eta2 = exp(log_prec_eta2);
 
-  nll -= dnorm(lag_logit_eta2_phi_period, Type(0), Type(sqrt(1/0.15)), true);
+  // nll -= dnorm(lag_logit_eta2_phi_period, Type(0), Type(sqrt(1/0.15)), true);
   Type eta2_phi_period = 2*exp(lag_logit_eta2_phi_period)/(1+exp(lag_logit_eta2_phi_period))-1;
   
   nll += SEPARABLE(AR1(Type(eta2_phi_period)), GMRF(R_spatial))(eta2);
@@ -228,10 +236,10 @@ Type objective_function<Type>::operator() ()
 
   ////////////////////
 
-  nll -= dlgamma(log_prec_eta3, Type(1), Type(20000), true);
+  // nll -= dlgamma(log_prec_eta3, Type(1), Type(20000), true);
   Type prec_eta3 = exp(log_prec_eta3);
 
-  nll -= dnorm(lag_logit_eta3_phi_age, Type(0), Type(sqrt(1/0.15)), true);
+  // nll -= dnorm(lag_logit_eta3_phi_age, Type(0), Type(sqrt(1/0.15)), true);
   Type eta3_phi_age = 2*exp(lag_logit_eta3_phi_age)/(1+exp(lag_logit_eta3_phi_age))-1;
 
   
@@ -259,6 +267,7 @@ Type objective_function<Type>::operator() ()
                      + Z_period * u_period * sqrt(1/prec_rw_period)
                      // + Z_spatial * spatial                     
                      + Z_spatial * u_spatial_str * sqrt(1/prec_spatial)
+                     + Z_country * u_country * sqrt(1/prec_country)
                      + Z_omega1 * omega1_v * sqrt(1/prec_omega1)
                      + Z_omega2 * omega2_v * sqrt(1/prec_omega2)
                      + Z_interaction1 * eta1_v * sqrt(1/prec_eta1)
@@ -363,6 +372,8 @@ Type objective_function<Type>::operator() ()
 
   REPORT(log_prec_eta3);
   REPORT(eta3_phi_age);
+
+  REPORT(log_prec_country);
 
   REPORT(log_prec_omega1);
   REPORT(omega1_phi_age);
