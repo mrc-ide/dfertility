@@ -1,7 +1,7 @@
 Package: dfertility
 Type: Package
 Title: District level estimation of age-specific fertility
-Version: 0.1.04
+Version: 0.1.05
 Authors@R: 
     person(given = "Oli",
            family = "Stevens",
@@ -20,17 +20,21 @@ Imports:
     countrycode,
     R6,
     TMB,
-    eppasm,
     ggplot2,
     here,
     magrittr,
     mvtnorm,
+    naomi,
     rdhs,
+    demogsurv,
     sf,
     spdep,
     tidyr,
     zip,
     zoo
+Additional_repositories:
+    https://github.com/mrc-ide/demogsurv,
+    https://github.com/mrc-ide/naomi
 Suggests: 
     tidyverse,
     viridis
