@@ -42,7 +42,7 @@ Type objective_function<Type>::operator() ()
 
   DATA_SPARSE_MATRIX(Z_spatial);
   DATA_SPARSE_MATRIX(R_spatial);
-  PARAMETER(rankdef_R_spatial); // rank deficiency of the R_spatial structure matrix
+  DATA_SCALAR(rankdef_R_spatial); // rank deficiency of the R_spatial structure matrix
   
   PARAMETER_VECTOR(u_spatial_str);
   PARAMETER(log_prec_spatial);
