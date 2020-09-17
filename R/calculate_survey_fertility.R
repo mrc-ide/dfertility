@@ -41,9 +41,9 @@ assign_cluster_area <- function(clusters, areas_wide, area_level) {
 }
 
 #' Join individual recode survey datasets by cluster to area IDs
-#' @param surveys
+#' @param surveys Survey dataframe as created by \code{rdhs::dhs_surveys()}
 #' @param cluster_areas Dataframe of clusters assigned to areas. Output of \code{\link{cluster_areas}}.
-#' @param single_tips <<describe>>
+#' @param single_tips desc this
 #' @return Nested list: \code{df$ir} and \code{df$tips_surv}. \code{df$ir} has one list item per survey/area combination and \code{df$tips_surv} has the corroborating TIPS value.
 #' @export
 #' @seealso \code{\link{cluster_areas}}

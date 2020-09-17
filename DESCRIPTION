@@ -23,6 +23,7 @@ Imports:
     ggplot2,
     here,
     magrittr,
+    dplyr,
     mvtnorm,
     naomi,
     rdhs,
