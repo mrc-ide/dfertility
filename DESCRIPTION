@@ -1,7 +1,7 @@
 Package: dfertility
 Type: Package
 Title: District level estimation of age-specific fertility
-Version: 0.1.05
+Version: 0.1.06
 Authors@R: 
     person(given = "Oli",
            family = "Stevens",
@@ -25,7 +25,6 @@ Imports:
     magrittr,
     dplyr,
     mvtnorm,
-    naomi,
     rdhs,
     demogsurv,
     sf,
@@ -34,8 +33,7 @@ Imports:
     zip,
     zoo
 Additional_repositories:
-    https://github.com/mrc-ide/demogsurv,
-    https://github.com/mrc-ide/naomi
+    https://github.com/mrc-ide/demogsurv
 Suggests: 
     tidyverse,
     viridis
