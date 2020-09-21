@@ -26,14 +26,11 @@ Imports:
     dplyr,
     mvtnorm,
     rdhs,
-    demogsurv,
     sf,
     spdep,
     tidyr,
     zip,
     zoo
-Additional_repositories:
-    https://github.com/mrc-ide/demogsurv
 Suggests: 
     tidyverse,
     viridis
