@@ -1,3 +1,7 @@
+#' Download MICS surveys
+#' @param iso3 ISO3 code
+#' @export
+
 create_surveys_mics <- function(iso3) {
 
   sharepoint <- spud::sharepoint$new(Sys.getenv("SHAREPOINT_URL"))
@@ -9,9 +13,11 @@ create_surveys_mics <- function(iso3) {
 
   mics_survey_names <- str_replace(iso3_mics, ".rds", "")
 
-  mics_paths <- file.path(root, iso3_mics)
+  paths <- file.path("sites", Sys.getenv("SHAREPOINT_SITE"), Sys.getenv("MICS_ORDERLY_PATH"), iso3_mics)
 
-  mics_dat <- lapply(mics_paths, readRDS) %>%
+  files <- lapply(paths, sharepoint_download, sharepoint_url = Sys.getenv("SHAREPOINT_URL"))
+
+  mics_dat <- lapply(files, readRDS) %>%
     lapply("[", c("wm", "bh", "hh"))
 
   names(mics_dat) <- toupper(mics_survey_names)
@@ -20,6 +26,9 @@ create_surveys_mics <- function(iso3) {
 
 }
 
+#' Filter MICS datasets
+#' @description Filter MICS household, women, and birth history datasets to key variables, and rename to ensure consistent column names between surveys
+#' @export
 
 filter_mics <- function(dat, mics_indicators, survey_id_i) {
 
@@ -64,6 +73,9 @@ filter_mics <- function(dat, mics_indicators, survey_id_i) {
 
 }
 
+#' Transform MICS dataframes
+#' @description Convert lists by survey to lists by dataset type
+#' @export
 transform_mics <- function(mics_survey_data, mics_indicators) {
 
   mics_dat <- Map(filter_mics, mics_survey_data, list(mics_indicators), names(mics_survey_data))
@@ -93,6 +105,9 @@ transform_mics <- function(mics_survey_data, mics_indicators) {
   return(df)
 
 }
+
+#' Join household datasets with area hierarchy
+#' @export
 
 join_survey_areas <- function(fertility_mics_data, areas) {
 
@@ -146,6 +161,8 @@ join_survey_areas <- function(fertility_mics_data, areas) {
 
 }
 
+#' Transform survey datasets into inputs for calc_asfr
+#' @export
 make_asfr_inputs <- function(mics_survey_areas, mics_survey_data) {
 
   dat <- mics_survey_areas
