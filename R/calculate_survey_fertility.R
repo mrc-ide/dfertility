@@ -9,17 +9,6 @@
 
 assign_cluster_area <- function(clusters, areas_wide, area_level) {
 
-  iso3_current <- unique(clusters$iso3)
-
-  if (area_level == "naomi") {
-
-    int <- areas_long %>%
-      filter(iso3 == iso3_current)
-
-    area_level <- unique(int$area_level[int$naomi_level == TRUE])
-
-  }
-
   areas <- clusters %>%
     rename(area_id = geoloc_area_id) %>%
     left_join(areas_wide %>% select(area_id, paste0("area_id", area_level))) %>%
@@ -40,6 +29,23 @@ assign_cluster_area <- function(clusters, areas_wide, area_level) {
 
 }
 
+
+#' Join individual recode survey datasets by area
+#' @param ir Individual recode survey dataset
+#' @param area_list List of areas
+ir_by_area <- function(ir, area_list, n, total) {
+
+  print(paste(n, "of", total))
+
+  ir_int <- ir %>%
+    left_join(area_list, by=c("v001" = "cluster_id")) %>%
+    filter(!is.na(area_id)) %>%
+    group_split(area_id)
+
+  return(ir_int)
+
+}
+
 #' Join individual recode survey datasets by cluster to area IDs
 #' @param surveys Survey dataframe as created by \code{rdhs::dhs_surveys()}
 #' @param cluster_areas Dataframe of clusters assigned to areas. Output of \code{\link{cluster_areas}}.
@@ -51,6 +57,7 @@ assign_cluster_area <- function(clusters, areas_wide, area_level) {
 clusters_to_surveys <- function(surveys, cluster_areas, single_tips = TRUE) {
 
   level <- areas_long$area_level[areas_long$area_id == cluster_areas[[1]]$area_id[[1]]]
+  iso3 <- areas_long$area_id[areas_long$area_level ==0]
 
   ird <- dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
 
@@ -63,7 +70,7 @@ clusters_to_surveys <- function(surveys, cluster_areas, single_tips = TRUE) {
     return(x)}) %>%
     Map(function(ir, surveys) {
       mutate(ir,
-             surveyid = surveys$SurveyId,
+             surveyid = surveys$survey_id,
              country = surveys$CountryName,
              survyear = surveys$SurveyYear,
              survtype = surveys$SurveyType)
@@ -84,7 +91,7 @@ clusters_to_surveys <- function(surveys, cluster_areas, single_tips = TRUE) {
 
   names(ir) <- names(cluster_areas)
 
-  if(unique(surveys$iso3) == "ETH") {
+  if(iso3 == "ETH") {
 
     cols_edit <- c("v008", "v011", "b3_01", "b3_02", "b3_03", "b3_04", "b3_05", "b3_06", "b3_07", "b3_08", "b3_09", "b3_10", "b3_11", "b3_12", "b3_13", "b3_14", "b3_15", "b3_16", "b3_17", "b3_18", "b3_19", "b3_20")
 
@@ -96,7 +103,7 @@ clusters_to_surveys <- function(surveys, cluster_areas, single_tips = TRUE) {
 
   if(level > 0) {
 
-    ir <- Map(ir_by_area2, ir, cluster_areas[names(ir)], n=1:length(ir), total=length(ir)) %>%
+    ir <- Map(ir_by_area, ir, cluster_areas[names(ir)], n=1:length(ir), total=length(ir)) %>%
       unlist(recursive = FALSE)
 
     survey_type <- ir %>%
