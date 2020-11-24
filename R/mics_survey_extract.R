@@ -7,12 +7,16 @@ create_surveys_mics <- function(iso3, mics_indicators) {
   sharepoint <- spud::sharepoint$new(Sys.getenv("SHAREPOINT_URL"))
   folder <- sharepoint$folder(site = Sys.getenv("SHAREPOINT_SITE"), path = Sys.getenv("MICS_ORDERLY_PATH"))
 
-  iso3_mics <- folder$list() %>%
+  mics_file_names <- folder$list() %>%
     filter(str_detect(name, tolower(iso3))) %>%
     .$name %>%
     sort
 
-  mics_survey_names <- toupper(str_replace(iso3_mics, ".rds", ""))
+  mics_survey_names <- toupper(str_replace(mics_file_names, ".rds", ""))
+
+  mics_file_names <- lapply(tolower(unique(filter(mics_indicators, survey_id %in% mics_survey_names)$survey_id)),
+         grep, x=mics_file_names, value=TRUE
+  ) %>% unlist
 
   rename_datasets_key <- mics_indicators %>%
     filter(survey_id %in% mics_survey_names) %>%
@@ -21,7 +25,7 @@ create_surveys_mics <- function(iso3, mics_indicators) {
     group_by(survey_id) %>%
     group_split
 
-  paths <- file.path("sites", Sys.getenv("SHAREPOINT_SITE"), Sys.getenv("MICS_ORDERLY_PATH"), iso3_mics)
+  paths <- file.path("sites", Sys.getenv("SHAREPOINT_SITE"), Sys.getenv("MICS_ORDERLY_PATH"), mics_file_names)
 
   files <- lapply(paths, sharepoint_download, sharepoint_url = Sys.getenv("SHAREPOINT_URL"))
 
@@ -39,7 +43,10 @@ create_surveys_mics <- function(iso3, mics_indicators) {
 
   mics_dat <- Map(extract_rename_datasets, mics_dat, rename_datasets_key)
 
-  names(mics_dat) <- mics_survey_names
+  names(mics_dat) <- mics_indicators %>%
+    filter(survey_id %in% mics_survey_names) %>%
+    distinct(survey_id) %>%
+    .$survey_id
 
   return(mics_dat)
 
@@ -51,7 +58,10 @@ create_surveys_mics <- function(iso3, mics_indicators) {
 
 filter_mics <- function(dat, mics_indicators, survey_id_i) {
 
-  indicators <- filter(mics_indicators, survey_id == survey_id_i)
+  indicators <- filter(mics_indicators,
+                       survey_id == survey_id_i,
+                       label != "dataset name"
+  )
 
   wm <- dat$wm
   colnames(wm) <- tolower(colnames(wm))
@@ -107,7 +117,12 @@ transform_mics <- function(mics_survey_data, mics_indicators) {
     lapply("[[", "hh") %>%
     lapply(function(x) {
       x %>%
-        left_join(data.frame(mics_area_name = attr(x$mics_area_name, "labels"), mics_area_name_label = str_to_title(names(attr(x$mics_area_name, "labels")))))
+        left_join(data.frame(mics_area_name = attr(x$mics_area_name, "labels"),
+                             mics_area_name_label = str_to_title(
+                               names(attr(x$mics_area_name, "labels")))
+                             )
+                  ) %>%
+        select(-mics_area_name)
 
     }) %>%
     bind_rows(.id = "survey_id")
@@ -128,19 +143,27 @@ transform_mics <- function(mics_survey_data, mics_indicators) {
 #' Join household datasets with area hierarchy
 #' @export
 
-join_survey_areas <- function(fertility_mics_data, areas) {
+join_survey_areas <- function(fertility_mics_data, areas, warn=FALSE) {
+
+  errfun <- if (warn)
+    warning
+  else stop
 
   areas <- areas %>% st_drop_geometry()
 
   dat <- fertility_mics_data$hh
 
-  lvl <- unique(dat$area_level)
+  lvl <- dat %>%
+    distinct(survey_id, area_level)
+
+  area_survey_level <- areas %>%
+    left_join(lvl)
 
   dat_merge <- dat %>%
-    full_join(areas %>%
-                filter(area_level ==lvl) %>%
-                select(area_id, area_name, area_level),
-              by=c("mics_area_name_label" = "area_name", "area_level")
+    full_join(area_survey_level %>%
+                select(survey_id, area_id, area_name, area_level) %>%
+                filter(!is.na(survey_id)),
+              by=c("mics_area_name_label" = "area_name", "area_level", "survey_id")
     )
 
 
@@ -152,28 +175,31 @@ join_survey_areas <- function(fertility_mics_data, areas) {
       distinct %>%
       rename(mics_area_name = mics_area_name_label)
 
-    stop("Survey regions were not matched to areas:\n",
-         paste0(capture.output(missing_areas), collapse = "\n"))
+    errfun("\n\nSurvey regions were not matched to areas:\n",
+         paste0(capture.output(missing_areas), collapse = "\n"),
+         "\n\nThis must be corrected \n \n"
+    )
   }
 
-  if(any(is.na(dat_merge$mics_area_name_label))) {
+  if(any(is.na(dat_merge$cluster))) {
 
     missing_areas <- dat_merge %>%
-      filter(is.na(mics_area_name_label)) %>%
+      filter(is.na(cluster)) %>%
       select(survey_id, mics_area_name_label, area_id) %>%
       distinct %>%
-      rename(mics_area_name = mics_area_name_label)
+      rename(area_name = mics_area_name_label)
 
-    warning("Areas did not have matching survey regions:\n",
-            paste0(capture.output(missing_areas), collapse = "\n"))
+    warning("\n\nAreas were not found in MICS survey:\n",
+            paste0(capture.output(missing_areas), collapse = "\n"),
+            "\n\nThis may be because the survey did not sample these regions"
+          )
 
   }
 
   fertility_mics_data$hh <- dat %>%
-    left_join(areas %>%
-                filter(area_level ==lvl) %>%
-                select(area_id, area_name, area_level),
-              by=c("mics_area_name_label" = "area_name", "area_level")
+    left_join(area_survey_level %>%
+                select(survey_id, area_id, area_name, area_level),
+              by=c("mics_area_name_label" = "area_name", "area_level", "survey_id")
     )
 
   fertility_mics_data
