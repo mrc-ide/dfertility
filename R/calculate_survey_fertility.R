@@ -54,10 +54,7 @@ ir_by_area <- function(ir, area_list, n, total) {
 #' @export
 #' @seealso \code{\link{cluster_areas}}
 
-clusters_to_surveys <- function(surveys, cluster_areas, single_tips = TRUE) {
-
-  level <- areas_long$area_level[areas_long$area_id == cluster_areas[[1]]$area_id[[1]]]
-  iso3 <- areas_long$area_id[areas_long$area_level ==0]
+clusters_to_surveys <- function(iso3, surveys, cluster_areas, level, single_tips = TRUE) {
 
   ird <- dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
 

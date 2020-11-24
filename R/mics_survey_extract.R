@@ -2,25 +2,44 @@
 #' @param iso3 ISO3 code
 #' @export
 
-create_surveys_mics <- function(iso3) {
+create_surveys_mics <- function(iso3, mics_indicators) {
 
   sharepoint <- spud::sharepoint$new(Sys.getenv("SHAREPOINT_URL"))
   folder <- sharepoint$folder(site = Sys.getenv("SHAREPOINT_SITE"), path = Sys.getenv("MICS_ORDERLY_PATH"))
 
   iso3_mics <- folder$list() %>%
     filter(str_detect(name, tolower(iso3))) %>%
-    .$name
+    .$name %>%
+    sort
 
-  mics_survey_names <- str_replace(iso3_mics, ".rds", "")
+  mics_survey_names <- toupper(str_replace(iso3_mics, ".rds", ""))
+
+  rename_datasets_key <- mics_indicators %>%
+    filter(survey_id %in% mics_survey_names) %>%
+    filter(label == "dataset name") %>%
+    arrange(survey_id, filetype) %>%
+    group_by(survey_id) %>%
+    group_split
 
   paths <- file.path("sites", Sys.getenv("SHAREPOINT_SITE"), Sys.getenv("MICS_ORDERLY_PATH"), iso3_mics)
 
   files <- lapply(paths, sharepoint_download, sharepoint_url = Sys.getenv("SHAREPOINT_URL"))
 
-  mics_dat <- lapply(files, readRDS) %>%
-    lapply("[", c("wm", "bh", "hh"))
+  mics_dat <- lapply(files, readRDS)
 
-  names(mics_dat) <- toupper(mics_survey_names)
+  extract_rename_datasets <- function(mics_dat, rename_datasets_key) {
+
+    mics_dat <- mics_dat[rename_datasets_key$value]
+
+    names(mics_dat) <- rename_datasets_key$id
+
+    return(mics_dat)
+
+  }
+
+  mics_dat <- Map(extract_rename_datasets, mics_dat, rename_datasets_key)
+
+  names(mics_dat) <- mics_survey_names
 
   return(mics_dat)
 
@@ -140,7 +159,7 @@ join_survey_areas <- function(fertility_mics_data, areas) {
   if(any(is.na(dat_merge$mics_area_name_label))) {
 
     missing_areas <- dat_merge %>%
-      filter(is.na(area_id)) %>%
+      filter(is.na(mics_area_name_label)) %>%
       select(survey_id, mics_area_name_label, area_id) %>%
       distinct %>%
       rename(mics_area_name = mics_area_name_label)
