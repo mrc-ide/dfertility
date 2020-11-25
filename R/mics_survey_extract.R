@@ -16,7 +16,10 @@ create_surveys_mics <- function(iso3, mics_indicators) {
 
   mics_file_names <- lapply(tolower(unique(filter(mics_indicators, survey_id %in% mics_survey_names)$survey_id)),
          grep, x=mics_file_names, value=TRUE
-  ) %>% unlist
+  ) %>%
+    unlist %>%
+    sort
+
 
   rename_datasets_key <- mics_indicators %>%
     filter(survey_id %in% mics_survey_names) %>%
@@ -46,7 +49,8 @@ create_surveys_mics <- function(iso3, mics_indicators) {
   names(mics_dat) <- mics_indicators %>%
     filter(survey_id %in% mics_survey_names) %>%
     distinct(survey_id) %>%
-    .$survey_id
+    .$survey_id %>%
+    sort
 
   return(mics_dat)
 
