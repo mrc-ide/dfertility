@@ -1,3 +1,48 @@
+get_fertility_surveys <- function(surveys) {
+
+  ird <- dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
+
+  ird <- ird %>%
+    mutate(path = unlist(get_datasets(.))) %>%
+    bind_rows()
+
+  ir <- lapply(ird$path, readRDS) %>%
+    lapply(function(x) {class(x) <- "data.frame"
+    return(x)}) %>%
+    Map(function(ir, surveys) {
+      mutate(ir,
+             surveyid = surveys$survey_id,
+             country = surveys$CountryName,
+             survyear = surveys$SurveyYear,
+             survtype = surveys$SurveyType)
+    }, ., group_split(surveys, SurveyId))
+
+  ir
+
+}
+
+map_ir_to_areas <- function(ir, cluster_list, single_tips = TRUE) {
+
+  ir <- Map(ir_by_area, ir, cluster_list[names(ir)], n=1:length(ir), total=length(ir)) %>%
+    unlist(recursive = FALSE)
+
+  survey_type <- ir %>%
+    lapply("[", "survtype") %>%
+    lapply(unique) %>%
+    bind_rows
+
+  if(!single_tips)
+    tips_surv <- list("DHS" = c(0,15), "MIS" = c(0,5), "AIS" = c(0,5))[survey_type$survtype]
+  else
+    tips_surv <- list("DHS" = c(0:15), "MIS" = c(0:5), "AIS" = c(0:5))[survey_type$survtype]
+
+  dat <- list()
+  dat$ir <- ir
+  dat$tips_surv <- tips_surv
+
+  dat
+}
+
 #' Aggregate district level cluster dataframe
 #' @description Aggregate a dataframe of survey clusters geolocated to an administrative to any higher administrative level
 #' @param clusters Dataframe of geolocated survey clusters
@@ -39,6 +84,10 @@ ir_by_area <- function(ir, area_list, n, total) {
 
   ir_int <- ir %>%
     left_join(area_list, by=c("v001" = "cluster_id")) %>%
+    mutate(survey_id = factor(survey_id),
+           survtype = factor(survtype),
+           survyear = factor(survyear),
+           area_id = factor(area_id)) %>%
     filter(!is.na(area_id)) %>%
     group_split(area_id)
 

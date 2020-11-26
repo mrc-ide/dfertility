@@ -392,37 +392,14 @@ make_model_frames <- function(iso3_c,
     st_drop_geometry() %>%
     mutate(iso3 = iso3_c)
 
-  if(is.null(mics_asfr))
-    mics_flag <- FALSE
-  else
-    mics_flag <- TRUE
-
-  asfr <- asfr %>%
-    bind_rows()
-
-  if(!project) {
-    if(mics_flag) {
-      mics_asfr <- mics_asfr %>%
-        bind_rows()
-
-      df <- asfr %>%
-        bind_rows(mics_asfr)
-    } else {
-      df <- asfr
-    }
-
-    max_year <- max(df$period)
-
-  } else {
-    max_year <- project
-  }
+  max_year <- project
 
   population <- extend_populations(population, areas) %>%
     dplyr::rename(population = value) %>%
     dplyr::mutate(iso3 = iso3_c)
 
   area_tree <- create_areas(area_merged = areas)
-  area_aggregation <- create_area_aggregation(areas$area_id[areas$naomi_level], area_tree)
+  area_aggregation <- create_area_aggregation(areas$area_id[areas$area_level == model_level], area_tree)
 
   mf_model <- tidyr::crossing(period = 1995:max_year,
                        age_group = c("15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49"),
@@ -549,7 +526,7 @@ make_model_frames <- function(iso3_c,
   mf$out_toggle <- 1
 
 
-  if(mics_flag) {
+  if(!is.null(mics_asfr)) {
 
     # mf_mics <- tidyr::crossing(area_id = filter(areas_long, area_level == 1)$area_id,
     mf_mics <- tidyr::crossing(area_id = as.character(unique(mics_asfr$area_id)),
@@ -628,11 +605,13 @@ make_model_frames <- function(iso3_c,
   R$R_country <- as(diag(1, 1), "dgTMatrix")
   R$R_spatial_iid <- as(diag(1, length(unique(mf$mf_model$area_id))), "dgTMatrix")
 
-  if(mics_flag) {
+  if(!is.null(mics_asfr)) {
     M_obs_mics <- sparse.model.matrix(~0 + idx, mf$mics$obs)
     Z$Z_tips_mics <- sparse.model.matrix(~0 + tips_f, mf$mics$obs)
     # X_tips_dummy_mics <- model.matrix(~0 + tips_dummy, mf$mics$obs)
     R$R_tips_mics <- make_rw_structure_matrix(ncol(Z$Z_tips_mics), 1, adjust_diagonal = TRUE)
+
+    mf$mics$M_obs_mics <- M_obs_mics
   }
 
   mf$R <- R
@@ -640,7 +619,7 @@ make_model_frames <- function(iso3_c,
   mf$X_extract <- X_extract
 
   mf$district$M_obs <- M_obs
-  mf$mics$M_obs_mics <- M_obs_mics
+
 
   return(mf)
 }
