@@ -19,6 +19,7 @@ get_fertility_surveys <- function(surveys) {
 
   ir
 
+
 }
 
 map_ir_to_areas <- function(ir, cluster_list, single_tips = TRUE) {
