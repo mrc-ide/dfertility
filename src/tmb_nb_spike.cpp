@@ -364,7 +364,7 @@ Type objective_function<Type>::operator() ()
                                 + X_spike_2000_mics * beta_spike_2000          // spike 2000
                                 + X_spike_1999_mics * beta_spike_1999          // spike 1999
                                 + X_spike_2001_mics * beta_spike_2001          // spike 2001
-                                log_offset_mics
+                                + log_offset_mics
 
                 );
 
