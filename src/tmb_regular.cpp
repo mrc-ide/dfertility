@@ -159,11 +159,28 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(u_period); 
  
  
-  nll -= dnorm(log_prec_rw_period, Type(5.93204716), Type(0.80520811), true);
+  // nll -= dnorm(log_prec_rw_period, Type(5.93204716), Type(0.80520811), true);
+  nll -= dlgamma(log_prec_rw_period, Type(1), Type(20000), true);
   Type prec_rw_period = exp(log_prec_rw_period);
 
-  nll -= Type(-0.5) * (u_period * (R_period * u_period)).sum();
-  nll -= dnorm(u_period.sum(), Type(0), Type(0.01) * u_period.size(), true);
+  // nll -= Type(-0.5) * (u_period * (R_period * u_period)).sum();
+  // nll -= dnorm(u_period.sum(), Type(0), Type(0.01) * u_period.size(), true);
+
+  PARAMETER(lag_logit_phi_period);
+  
+  nll -= dnorm(lag_logit_phi_period, Type(0), Type(sqrt(1/0.15)), true);
+  Type phi_period = 2*exp(lag_logit_phi_period)/(1+exp(lag_logit_phi_period))-1;
+  
+  nll += AR1(Type(phi_period))(u_period);
+
+  //   PARAMETER_VECTOR(lag_logit_ar2_phi_period);
+
+  // nll -= dnorm(lag_logit_ar2_phi_period, Type(0), Type(sqrt(1/0.15)), true).sum();
+  // vector<Type> ar2_phi_period = 2*exp(lag_logit_ar2_phi_period)/(1+exp(lag_logit_ar2_phi_period)) -1;
+
+  // ARk_t<Type> ar2_period(ar2_phi_period);
+
+  // nll += ar2_period(u_period);
 
   ///
 
@@ -176,19 +193,7 @@ Type objective_function<Type>::operator() ()
   nll += SEPARABLE(AR1(Type(omega2_phi_period)), GMRF(R_country))(omega2);
   vector<Type> omega2_v(omega2);
 
-  // PARAMETER_VECTOR(lag_logit_ar2_phi_period);
-  // PARAMETER(lag_logit_phi_period);
-  // nll += AR1(Type(phi_period))(u_period);
 
-  // nll -= dnorm(lag_logit_phi_period, Type(0), Type(sqrt(1/0.15)), true);
-  // Type phi_period = 2*exp(lag_logit_phi_period)/(1+exp(lag_logit_phi_period))-1;
-
-  // nll -= dnorm(lag_logit_ar2_phi_period, Type(0), Type(sqrt(1/0.15)), true).sum();
-  // vector<Type> ar2_phi_period = 2*exp(lag_logit_ar2_phi_period)/(1+exp(lag_logit_ar2_phi_period)) -1;
-
-  // ARk_t<Type> ar2_period(ar2_phi_period);
-
-  // nll += ar2_period(u_period);
 
   ////////////////////
   // ETA-1 - Age x time interaction
@@ -290,7 +295,7 @@ Type objective_function<Type>::operator() ()
 
     
     nll -= dpois(births_obs_dhs, exp(mu_obs_pred_dhs), true).sum();  
-    
+
   } else {
 
     vector<Type> mu_obs_pred_dhs(X_extract_dhs * (M_obs * log_lambda)
@@ -374,30 +379,30 @@ Type objective_function<Type>::operator() ()
   // REPORT(lambda);
   // REPORT(births);
 
-  // REPORT(log_prec_spatial);
-  // // REPORT(logit_spatial_rho);
+  REPORT(log_prec_spatial);
+  // REPORT(logit_spatial_rho);
 
-  // REPORT(log_prec_eta1);
-  // REPORT(eta1_phi_age);
-  // REPORT(eta1_phi_period);
+  REPORT(log_prec_eta1);
+  REPORT(eta1_phi_age);
+  REPORT(eta1_phi_period);
 
-  // REPORT(log_prec_eta2);
-  // REPORT(eta2_phi_period);
+  REPORT(log_prec_eta2);
+  REPORT(eta2_phi_period);
 
-  // REPORT(log_prec_eta3);
-  // REPORT(eta3_phi_age);
+  REPORT(log_prec_eta3);
+  REPORT(eta3_phi_age);
 
   // REPORT(log_prec_country);
 
-  // REPORT(log_prec_omega1);
-  // REPORT(omega1_phi_age);
+  REPORT(log_prec_omega1);
+  REPORT(omega1_phi_age);
 
-  // REPORT(log_prec_omega2);
-  // REPORT(omega2_phi_period);
+  REPORT(log_prec_omega2);
+  REPORT(omega2_phi_period);
 
-  // REPORT(log_prec_rw_age);
-  // REPORT(log_prec_rw_period);
-  // REPORT(log_prec_rw_tips);
+  REPORT(log_prec_rw_age);
+  REPORT(log_prec_rw_period);
+  REPORT(log_prec_rw_tips);
 
   // REPORT(beta_tips_dummy);
   // // REPORT(beta_urban_dummy);

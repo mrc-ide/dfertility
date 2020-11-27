@@ -64,7 +64,8 @@ make_adjacency_matrix <- function(areas, model_level) {
 
   #' Neighbor list
   nb <- sh %>%
-    as("Spatial") %>%
+    # st_as_sf() %>%
+    # as("Spatial") %>%
     spdep::poly2nb() %>%
     `names<-`(sh$area_idx)
 
