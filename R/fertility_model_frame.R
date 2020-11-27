@@ -446,6 +446,9 @@ make_model_frames <- function(iso3_c,
            age_group = factor(age_group, levels(mf_model$age_group)),
            area_id = factor(area_id, levels(mf_model$area_id)),
            period = factor(period, levels(mf_model$period)),
+           spike_2000 = ifelse(period == 2000, 1, 0),
+           spike_1999 = ifelse(period == 1999, 1, 0),
+           spike_2001 = ifelse(period == 2001, 1, 0)
     )
 
   mf <- list()
@@ -553,7 +556,10 @@ make_model_frames <- function(iso3_c,
       mutate(tips_dummy = as.integer(tips > 2),
              tips_f = factor(tips),
              age_group = factor(age_group, levels(mf_model$age_group)),
-             idx =factor(idx, levels(mf_mics$idx))
+             idx =factor(idx, levels(mf_mics$idx)),
+             spike_2000 = ifelse(period == 2000, 1, 0),
+             spike_1999 = ifelse(period == 1999, 1, 0),
+             spike_2001 = ifelse(period == 2001, 1, 0)
       )
 
     mf$mics$obs <- obs_mics
