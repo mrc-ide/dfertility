@@ -359,8 +359,8 @@ Type objective_function<Type>::operator() ()
     vector<Type> pop_mics(A_mics * pop);
     vector<Type> lambda_mics(births_pred_mics/pop_mics);
 
-    vector<Type> mu_obs_pred_mics(M_obs_mics * log(lambda_mics) +
-                                Z_tips_mics * u_tips_mics_constr * sqrt(1/prec_rw_tips)   +     // TIPS RW
+    vector<Type> mu_obs_pred_mics(M_obs_mics * log(lambda_mics)
+                                + Z_tips_mics * u_tips_mics_constr * sqrt(1/prec_rw_tips)     // TIPS RW
                                 + X_spike_2000_mics * beta_spike_2000          // spike 2000
                                 + X_spike_1999_mics * beta_spike_1999          // spike 1999
                                 + X_spike_2001_mics * beta_spike_2001          // spike 2001
