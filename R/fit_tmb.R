@@ -16,10 +16,10 @@ fit_sample_tmb <- function(data, par, random) {
   f$par.full <- obj$env$last.par
 
   fit <- c(f, obj = list(obj))
-  fit$sdreport <- sdreport(fit$obj, fit$par)
+  # fit$sdreport <- sdreport(fit$obj, fit$par)
 
   class(fit) <- "naomi_fit"  # this is hacky...
-  fit <- sample_tmb(fit, random_only=FALSE)
+  fit <- sample_tmb(fit, random_only=TRUE)
   return(fit)
 }
 

@@ -121,7 +121,7 @@ make_model_frames_dev <- function(iso3_c,
   area_aggregation <- create_area_aggregation(areas$area_id[areas$area_level == naomi_level], area_tree)
 
   mf_model <- tidyr::crossing(period = 1995:project,
-                       age_group = c("15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49"),
+                       age_group = unique(asfr$age_group),
                        area_id = unique(area_aggregation$model_area_id)) %>%
     left_join(
       population %>%
@@ -129,7 +129,7 @@ make_model_frames_dev <- function(iso3_c,
       by = c("period", "age_group", "area_id")
     ) %>%
     mutate(area_id = factor(area_id),
-           age_group = factor(age_group, levels = c("15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49")),
+           age_group = factor(age_group, levels = unique(asfr$age_group)),
            period = factor(period),
            urban = ifelse(area_id %in% c(
              filter(areas_long, parent_area_id == "ETH_1_10")$area_id,
@@ -403,7 +403,7 @@ make_model_frames <- function(iso3_c,
   area_aggregation <- create_area_aggregation(areas$area_id[areas$area_level == model_level], area_tree)
 
   mf_model <- tidyr::crossing(period = 1995:max_year,
-                       age_group = c("15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49"),
+                       age_group = unique(asfr$age_group),
                        area_id = unique(area_aggregation$model_area_id)) %>%
     left_join(
       population %>%
@@ -411,7 +411,7 @@ make_model_frames <- function(iso3_c,
       by = c("period", "age_group", "area_id")
     ) %>%
     mutate(area_id = factor(area_id),
-           age_group = factor(age_group, levels = c("15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49")),
+           age_group = factor(age_group, levels = unique(asfr$age_group)),
            period = factor(period),
            urban = ifelse(area_id %in% c(
              filter(areas_long, parent_area_id == "ETH_1_10")$area_id,
@@ -460,12 +460,12 @@ make_model_frames <- function(iso3_c,
   ## Outputs
 
   age_aggregation <- data.frame(
-    "age_group" = filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group_label,
-    "model_age_group" = filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group_label
+    "age_group" = filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group,
+    "model_age_group" = filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group
   ) %>%
     bind_rows(data.frame(
       "age_group" = "15-49",
-      "model_age_group" = filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group_label
+      "model_age_group" = filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group
     ))
 
   asfr_out <- tidyr::crossing(
