@@ -156,12 +156,6 @@ make_model_frames_dev <- function(iso3_c,
            tips_f = factor(tips),
            ais_dummy = ifelse(survtype %in% c("MIS", "AIS"), 1, 0),
            mics_dummy = ifelse(survtype == "MICS", 1, 0),
-           #####
-           urban = ifelse(area_id %in% c(
-             filter(areas_long, parent_area_id == "ETH_1_10")$area_id,
-             filter(areas_long, str_detect(area_name, "Town"))$area_id,
-             filter(areas_long, area_name %in% c("Harari", "Fafen (Jijiga)"))$area_id),
-             1, 0),
            age_group = factor(age_group, levels(mf_model$age_group)),
            period = factor(period, levels(mf_model$period))
     )
@@ -285,7 +279,7 @@ make_model_frames_dev <- function(iso3_c,
   # Z$Z_tips_ais <- sparse.model.matrix(~0 + tips_f, mf$observations$naomi_level_obs %>% filter(ais_dummy ==1))
   # Z_tips[which(mf$observations$naomi_level_obs$survtype != "DHS"), ] <- 0
   Z$X_tips_dummy <- model.matrix(~0 + tips_dummy, mf$observations$naomi_level_obs %>% filter(ais_dummy == 0 & mics_dummy == 0))
-  Z$X_urban_dummy <- model.matrix(~0 + urban, mf$observations$naomi_level_obs)
+  Z$X_urban_dummy <- model.matrix(~0 + urban, mf$mf_model)
 
   ais_join <- mf$observations$naomi_level_obs %>%
     mutate(col_idx = row_number()) %>%
@@ -436,13 +430,6 @@ make_model_frames <- function(iso3_c,
     mutate(tips_dummy = as.integer(tips > 5),
            tips_f = factor(tips),
            ais_dummy = ifelse(survtype %in% c("MIS", "AIS"), 1, 0),
-           #####
-           urban = ifelse(area_id %in% c(
-             filter(areas_long, parent_area_id == "ETH_1_10")$area_id,
-             filter(areas_long, str_detect(area_name, "Town"))$area_id,
-             filter(areas_long, area_name %in% c("Harari", "Fafen (Jijiga)"))$area_id),
-             1, 0),
-           #####
            age_group = factor(age_group, levels(mf_model$age_group)),
            area_id = factor(area_id, levels(mf_model$area_id)),
            period = factor(period, levels(mf_model$period)),
@@ -580,7 +567,7 @@ make_model_frames <- function(iso3_c,
   # Z$Z_tips_ais <- sparse.model.matrix(~0 + tips_f, mf$district$obs %>% filter(ais_dummy ==1))
   # Z_tips[which(mf$district$obs$survtype != "DHS"), ] <- 0
   Z$X_tips_dummy <- model.matrix(~0 + tips_dummy, mf$district$obs %>% filter(ais_dummy == 0))
-  Z$X_urban_dummy <- model.matrix(~0 + urban, mf$district$obs)
+  Z$X_urban_dummy <- model.matrix(~0 + urban, mf$mf_model)
 
   ais_join <- mf$district$obs %>%
     mutate(col_idx = row_number()) %>%
