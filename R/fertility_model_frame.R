@@ -134,7 +134,7 @@ make_model_frames_dev <- function(iso3_c,
            urban = ifelse(area_id %in% c(
              filter(areas_long, parent_area_id == "ETH_1_10")$area_id,
              filter(areas_long, str_detect(area_name, "Town"))$area_id,
-             filter(areas_long, area_name %in% c("Harari", "Fafen (Jijiga)"))$area_id),
+             filter(areas_long, area_name %in% c("Harari", "Fafen (Jijiga)", "Erer"))$area_id),
              1, 0)
     ) %>%
     arrange(period, area_id, age_group) %>%
