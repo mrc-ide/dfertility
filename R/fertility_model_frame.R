@@ -84,7 +84,7 @@ make_adjacency_matrix <- function(areas, model_level) {
 }
 
 
-make_model_frames_dev <- function(iso3_c,
+make_model_frames_dev <- function(iso3,
                               population,
                               asfr,
                               areas,
