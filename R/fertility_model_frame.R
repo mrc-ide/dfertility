@@ -115,7 +115,8 @@ make_model_frames_dev <- function(iso3,
     left_join(
       areas_long %>% dplyr::select(area_id, iso3),
       by = "area_id"
-    )
+    ) %>%
+    mutate(population = ifelse(is.nan(population), 0, population))
 
   area_tree <- create_areas(area_merged = areas)
   area_aggregation <- create_area_aggregation(areas$area_id[areas$area_level == naomi_level], area_tree)
