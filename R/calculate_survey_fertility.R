@@ -33,9 +33,21 @@ map_ir_to_areas <- function(ir, cluster_list, single_tips = TRUE) {
     bind_rows
 
   if(!single_tips)
-    tips_surv <- list("DHS" = c(0,15), "MIS" = c(0,5), "AIS" = c(0,5))[survey_type$survtype]
+    # tips_surv <- list("DHS" = c(0,15), "MIS" = c(0,5), "AIS" = c(0,5))[survey_type$survtype]
+    tips_surv <- lapply(survey_type$survtype, function(x) {
+      if(x=="DHS")
+        c(0,15)
+      else
+        c(0,5)
+    })
   else
-    tips_surv <- list("DHS" = c(0:15), "MIS" = c(0:5), "AIS" = c(0:5))[survey_type$survtype]
+    # tips_surv <- list("DHS" = c(0:15), "MIS" = c(0:5), "AIS" = c(0:5))[survey_type$survtype]
+    tips_surv <- lapply(survey_type$survtype, function(x) {
+      if(x=="DHS")
+        c(0:15)
+      else
+        c(0:5)
+    })
 
   dat <- list()
   dat$ir <- ir
