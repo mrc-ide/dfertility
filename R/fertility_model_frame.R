@@ -142,6 +142,7 @@ make_model_frames_dev <- function(iso3,
     ) %>%
     arrange(period, area_id, age_group) %>%
     mutate(idx = factor(row_number()),
+           id.period = group_indices(., period)-1,
            id.interaction1 = factor(group_indices(., age_group, period, iso3)),
            id.interaction2 = factor(group_indices(., period, area_id)),
            id.interaction3 = factor(group_indices(., age_group, area_id)),
@@ -281,6 +282,7 @@ make_model_frames_dev <- function(iso3,
   Z$Z_tips_ais <- sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% filter(survtype %in% c("AIS", "MIS")))
   Z$X_tips_dummy <- model.matrix(~0 + tips_dummy, mf$observations$full_obs %>% filter(survtype == "DHS"))
   Z$X_urban_dummy <- model.matrix(~0 + urban, mf$mf_model)
+  Z$X_period <- as(as.matrix(mf_model$id.period), "dgTMatrix")
 
   ais_join <- mf$observations$full_obs %>%
     mutate(col_idx = row_number()) %>%
