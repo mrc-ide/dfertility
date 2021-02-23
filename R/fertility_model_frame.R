@@ -118,6 +118,8 @@ make_model_frames_dev <- function(iso3,
     ) %>%
     mutate(population = ifelse(is.nan(population), 0, population))
 
+  # areas <- filter(areas, area_level %in% 0:1)
+
   area_tree <- create_areas(area_merged = areas)
   area_aggregation <- create_area_aggregation(areas$area_id[areas$area_level == naomi_level], area_tree)
 
