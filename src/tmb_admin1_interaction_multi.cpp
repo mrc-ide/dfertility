@@ -429,7 +429,6 @@ Type objective_function<Type>::operator() ()
   // REPORT(u_smooth_iid);
 
   REPORT(log_prec_spatial);
-  REPORT(logit_spatial_rho);
 
   REPORT(log_prec_eta1);
   REPORT(eta1_phi_age);

@@ -589,8 +589,6 @@ make_model_frames_batch <- function(population,
   # mf$out$A_asfr_out <- A_asfr_out
   mf$out$A_tfr_out <- A_tfr_out
 
-  browser()
-
   M_model_level_obs <- sparse.model.matrix(~0 + idx, mf$observations$model_level_obs)
   M_full_obs <- sparse.model.matrix(~0 + idx, mf$observations$full_obs)
 
