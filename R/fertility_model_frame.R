@@ -63,7 +63,7 @@ extract_model_level <- function(df_list, model_level) {
 make_adjacency_matrix <- function(areas, model_level) {
 
   if(length(model_level > 1)) {
-   filtered_areas <- Map(extract_naomi_level, areas, model_level) %>%
+   filtered_areas <- Map(extract_model_level, areas, model_level) %>%
      bind_rows()
   } else {
     filtered_areas <- areas %>%
