@@ -62,11 +62,12 @@ extract_model_level <- function(df_list, model_level) {
 
 make_adjacency_matrix <- function(areas, model_level) {
 
-  if(length(model_level > 1)) {
+  if(length(model_level) > 1) {
    filtered_areas <- Map(extract_model_level, areas, model_level) %>%
      bind_rows()
   } else {
     filtered_areas <- areas %>%
+      bind_rows() %>%
       filter(area_level == model_level)
   }
 
@@ -607,7 +608,7 @@ make_model_frames_batch <- function(population,
   Z$Z_spatial <- sparse.model.matrix(~0 + area_id, mf$mf_model)
   Z$Z_age <- sparse.model.matrix(~0 + age_group, mf$mf_model)
   Z$Z_period <- sparse.model.matrix(~0 + period, mf$mf_model)
-  Z$Z_country <- sparse.model.matrix(~0 + iso3, mf$mf_model)
+  # Z$Z_country <- sparse.model.matrix(~0 + iso3, mf$mf_model)
 
   # Z$Z_tips <- sparse.model.matrix(~0 + tips_f, mf$observations$full_obs)
   Z$Z_tips_dhs <- sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% filter(survtype == "DHS"))
