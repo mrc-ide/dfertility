@@ -22,10 +22,7 @@ get_fertility_surveys <- function(surveys) {
 
 }
 
-map_ir_to_areas <- function(ir, cluster_list, single_tips = TRUE) {
-
-  ir <- Map(ir_by_area, ir, cluster_list[names(ir)], n=1:length(ir), total=length(ir)) %>%
-    unlist(recursive = FALSE)
+assign_tips <- function(ir, single_tips) {
 
   survey_type <- ir %>%
     lapply("[", "survtype") %>%
@@ -48,6 +45,16 @@ map_ir_to_areas <- function(ir, cluster_list, single_tips = TRUE) {
       else
         c(0:5)
     })
+
+  tips_surv
+}
+
+map_ir_to_areas <- function(ir, cluster_list, single_tips = TRUE) {
+
+  ir <- Map(ir_by_area, ir, cluster_list[names(ir)], n=1:length(ir), total=length(ir)) %>%
+    unlist(recursive = FALSE)
+
+  tips_surv <- assign_tips(ir, single_tips)
 
   dat <- list()
   dat$ir <- ir

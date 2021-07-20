@@ -4,13 +4,23 @@
 #' @param areas_wide Area hierarchy in wide format
 #' @export
 
-area_populations <- function(population, areas_wide, project) {
+area_populations <- function(population, areas_wide, project, naomi_level) {
 
   population <- population %>%
     dplyr::filter(sex == "female", period <= project)
 
+  col_nam <- c(paste0("area_id", 0:naomi_level),
+    paste0("area_name", 0:naomi_level)
+  )
+
+  areas_wide <- areas_wide %>%
+    select(all_of(col_nam)) %>%
+    st_drop_geometry() %>%
+    distinct() %>%
+    mutate(area_id = .data[[paste0("area_id", naomi_level)]])
+
   base_area_pop <- dplyr::left_join(
-    areas_wide %>% sf::st_drop_geometry(), population, by = c("area_id"))
+    areas_wide, population, by = c("area_id"))
 
   level_ids <- stringr::str_subset(colnames(areas_wide), "area_id[0-9]")
 
@@ -124,7 +134,7 @@ make_model_frames_dev <- function(iso3,
     mutate(period = as.numeric(year_labels(calendar_quarter_to_quarter_id(calendar_quarter)))) %>%
     select(-calendar_quarter)
 
-  population <- area_populations(population, spread_areas(areas), project) %>%
+  population <- area_populations(population, spread_areas(areas), project, naomi_level) %>%
     filter(sex == "female") %>%
     ungroup %>%
     dplyr::select(-sex)
@@ -143,7 +153,7 @@ make_model_frames_dev <- function(iso3,
     ) %>%
     mutate(population = ifelse(is.nan(population), 0, population))
 
-  # areas <- filter(areas, area_level %in% 0:1)
+  areas <- filter(areas, area_level <= naomi_level)
 
   area_tree <- create_areas(area_merged = areas)
   area_aggregation <- create_area_aggregation(areas$area_id[areas$area_level == naomi_level], area_tree)
@@ -699,6 +709,26 @@ extend_populations <- function(population, areas) {
     dplyr::mutate(value = exp(zoo::na.approx(log(value), period, na.rm = FALSE))) %>%
     dplyr::group_by(area_id, age_group) %>%
     tidyr::fill(value, .direction="updown")
+
+}
+
+validate_model_frame <- function(mf, areas) {
+
+  population_check <- mf$mf_model %>%
+    filter(is.na(population))
+
+  if(nrow(population_check))
+    stop("Areas in model frame have no population")
+
+  observation_area_id <- unique(as.character(mf$observations$full_obs$area_id))
+  area_check <- observation_area_id[!observation_area_id %in% areas$area_id]
+
+  if(!rlang::is_empty(area_check))
+    stop(paste0(
+      "Area IDs in observation dataset are not found in area file\n\n",
+      area_check
+      )
+    )
 
 }
 

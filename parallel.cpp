@@ -7,7 +7,10 @@ Type objective_function<Type>::operator() ()
 
   using namespace density;
 
-  Type nll = 0;
+  DATA_INTEGER(n_threads);
+  omp_set_num_threads(n_threads);
+
+  parallel_accumulator<Type> nll(this);
 
   PARAMETER(beta_0);
 
@@ -112,7 +115,14 @@ Type objective_function<Type>::operator() ()
   nll -= dlgamma(log_prec_spatial, Type(1), Type(20000), true);
   Type prec_spatial = exp(log_prec_spatial);
 
-  nll -= Type(-0.5) * (u_spatial_str * (R_spatial * u_spatial_str)).sum();
+  // nll -= Type(-0.5) * (u_spatial_str * (R_spatial * u_spatial_str)).sum();
+
+  vector<Type> mv_spatial = Type(-0.5) * (u_spatial_str * (R_spatial * u_spatial_str));
+
+  for (int i = 0; i < mv_spatial.size(); ++i)
+  {
+    nll -= mv_spatial[i];
+  }
   
   nll -= dnorm(u_spatial_str.sum(), Type(0), Type(0.01) * u_spatial_str.size(), 1);
 
@@ -162,7 +172,15 @@ Type objective_function<Type>::operator() ()
 
 
   // // RW
-  nll -= Type(-0.5) * (u_period * (R_period * u_period)).sum();
+  // nll -= Type(-0.5) * (u_period * (R_period * u_period)).sum();
+
+  vector<Type> mv_period = Type(-0.5) * (u_period * (R_period * u_period));
+
+  for (int i = 0; i < mv_period.size(); ++i)
+  {
+    nll -= mv_period[i];
+  }
+
   nll -= dnorm(u_period.sum(), Type(0), Type(0.01) * u_period.size(), true);
 
   // // AR1
@@ -373,9 +391,18 @@ Type objective_function<Type>::operator() ()
   // nll -= dnbinom2(births_obs_dhs, exp(mu_obs_pred_dhs), var_nbinom_dhs, true).sum();  
   // nll -= dnbinom2(births_obs_ais, exp(mu_obs_pred_ais), var_nbinom_ais, true).sum();
 
-  nll -= dpois(births_obs_dhs, exp(mu_obs_pred_dhs), true).sum();  
-  nll -= dpois(births_obs_ais, exp(mu_obs_pred_ais), true).sum();  
+  for (int i = 0; i < births_obs_dhs.size(); ++i)
+  {
+    nll -= dpois(births_obs_dhs[i], exp(mu_obs_pred_dhs[i]), true);
+  }
+  
+  for (int i = 0; i < births_obs_ais.size(); ++i)
+  {
+    nll -= dpois(births_obs_ais[i], exp(mu_obs_pred_ais[i]), true);
+  }
 
+  // nll -= dpois(births_obs_dhs, exp(mu_obs_pred_dhs), true).sum();
+  // nll -= dpois(births_obs_ais, exp(mu_obs_pred_ais), true).sum();
 
   if(mics_toggle) {
 
@@ -411,7 +438,12 @@ Type objective_function<Type>::operator() ()
     // vector<Type> var_nbinom_mics = exp(mu_obs_pred_mics) + ((exp(mu_obs_pred_mics)) * (exp(mu_obs_pred_mics)) * overdispersion);
     // nll -= dnbinom2(births_obs_mics, exp(mu_obs_pred_mics), var_nbinom_mics, true).sum();  
 
-    nll -= dpois(births_obs_mics, exp(mu_obs_pred_mics), true).sum(); 
+    for (int i = 0; i < births_obs_mics.size(); ++i)
+      {
+        nll -= dpois(births_obs_mics[i], exp(mu_obs_pred_mics[i]), true);
+      }
+
+    // nll -= dpois(births_obs_mics, exp(mu_obs_pred_mics), true).sum(); 
 
   }
 

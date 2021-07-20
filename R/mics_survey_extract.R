@@ -126,10 +126,13 @@ transform_mics <- function(mics_survey_data, mics_indicators) {
                                names(attr(x$mics_area_name, "labels")))
                              )
                   ) %>%
-        select(-mics_area_name)
+        select(-mics_area_name) %>%
+        mutate(mics_area_name_label = str_remove_all(mics_area_name_label, "\\u0093|\\u0094"),
+               mics_area_name_label = stringr::str_trim(mics_area_name_label))
 
     }) %>%
     bind_rows(.id = "survey_id")
+
 
   bh <- mics_dat %>%
     lapply("[[", "bh") %>%
