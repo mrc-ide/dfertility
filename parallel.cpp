@@ -452,25 +452,25 @@ Type objective_function<Type>::operator() ()
   vector<Type> tfr_out(A_tfr_out * lambda_out);
 
   
-  REPORT(tfr_out);
+   REPORT(tfr_out);
   REPORT(lambda_out);
   // REPORT(lambda);
 
   // REPORT(log_prec_smooth_iid);
   // REPORT(u_smooth_iid);
 
-  // REPORT(log_prec_spatial);
+  REPORT(log_prec_spatial);
   // REPORT(logit_spatial_rho);
 
-  // REPORT(log_prec_eta1);
-  // REPORT(eta1_phi_age);
-  // REPORT(eta1_phi_period);
+  REPORT(log_prec_eta1);
+  REPORT(eta1_phi_age);
+  REPORT(eta1_phi_period);
 
-  // REPORT(log_prec_eta2);
-  // REPORT(eta2_phi_period);
+  REPORT(log_prec_eta2);
+  REPORT(eta2_phi_period);
 
-  // REPORT(log_prec_eta3);
-  // REPORT(eta3_phi_age);
+  REPORT(log_prec_eta3);
+  REPORT(eta3_phi_age);
 
   // REPORT(log_prec_country);
 
@@ -480,21 +480,21 @@ Type objective_function<Type>::operator() ()
   // REPORT(log_prec_omega2);
   // REPORT(omega2_phi_period);
 
-  // REPORT(log_prec_rw_age);
-  // REPORT(log_prec_rw_period);
-  // REPORT(log_prec_rw_tips);
+  REPORT(log_prec_rw_age);
+  REPORT(log_prec_rw_period);
+  REPORT(log_prec_rw_tips);
 
-  // REPORT(beta_period);
-  // REPORT(phi_arima_period);
+  REPORT(beta_period);
+  REPORT(phi_arima_period);
 
-  // REPORT(beta_tips_dummy);
+  REPORT(beta_tips_dummy);
   // // REPORT(beta_urban_dummy);
 
-  // REPORT(eta1);
-  // REPORT(eta2);
-  // REPORT(eta3);
+  REPORT(eta1);
+  REPORT(eta2);
+  REPORT(eta3);
 
-  // REPORT(beta_0);
+  REPORT(beta_0);
 
 
   return nll;

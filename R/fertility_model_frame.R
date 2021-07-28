@@ -130,28 +130,28 @@ make_model_frames_dev <- function(iso3,
     st_drop_geometry() %>%
     mutate(iso3 = iso3)
 
-  population <- population %>%
-    mutate(period = as.numeric(year_labels(calendar_quarter_to_quarter_id(calendar_quarter)))) %>%
-    select(-calendar_quarter)
-
-  population <- area_populations(population, spread_areas(areas), project, naomi_level) %>%
-    filter(sex == "female") %>%
-    ungroup %>%
-    dplyr::select(-sex)
-
-  population <- tidyr::crossing(area_id = unique(population$area_id),
-                         age_group = unique(population$age_group),
-                         period = 1995:2020
-  ) %>%
-    left_join(population, c("area_id", "age_group", "period")) %>%
-    group_by(area_id, age_group) %>%
-    mutate(population = exp(zoo::na.approx(log(population), period, na.rm = FALSE))) %>%
-    tidyr::fill(population, .direction="updown") %>%
-    left_join(
-      areas_long %>% dplyr::select(area_id, iso3),
-      by = "area_id"
-    ) %>%
-    mutate(population = ifelse(is.nan(population), 0, population))
+  # population <- population %>%
+  #   mutate(period = as.numeric(year_labels(calendar_quarter_to_quarter_id(calendar_quarter)))) %>%
+  #   select(-calendar_quarter)
+  #
+  # population <- area_populations(population, spread_areas(areas), project, naomi_level) %>%
+  #   filter(sex == "female") %>%
+  #   ungroup %>%
+  #   dplyr::select(-sex)
+  #
+  # population <- tidyr::crossing(area_id = unique(population$area_id),
+  #                        age_group = unique(population$age_group),
+  #                        period = 1995:2020
+  # ) %>%
+  #   left_join(population, c("area_id", "age_group", "period")) %>%
+  #   group_by(area_id, age_group) %>%
+  #   mutate(population = exp(zoo::na.approx(log(population), period, na.rm = FALSE))) %>%
+  #   tidyr::fill(population, .direction="updown") %>%
+  #   left_join(
+  #     areas_long %>% dplyr::select(area_id, iso3),
+  #     by = "area_id"
+  #   ) %>%
+  #   mutate(population = ifelse(is.nan(population), 0, population))
 
   areas <- filter(areas, area_level <= naomi_level)
 
@@ -163,7 +163,7 @@ make_model_frames_dev <- function(iso3,
                        area_id = unique(area_aggregation$model_area_id)) %>%
     left_join(
       population %>%
-        dplyr::select(iso3, area_id, period, age_group, population),
+        dplyr::select(area_id, period, age_group, population),
       by = c("period", "age_group", "area_id")
     ) %>%
     mutate(area_id = factor(area_id),
@@ -178,11 +178,11 @@ make_model_frames_dev <- function(iso3,
     arrange(period, area_id, age_group) %>%
     mutate(idx = factor(row_number()),
            id.period = group_indices(., period)-1,
-           id.interaction1 = factor(group_indices(., age_group, period, iso3)),
+           id.interaction1 = factor(group_indices(., age_group, period)),
            id.interaction2 = factor(group_indices(., period, area_id)),
-           id.interaction3 = factor(group_indices(., age_group, area_id)),
-           id.omega1 = factor(group_indices(., age_group, iso3)),
-           id.omega2 = factor(group_indices(., period, iso3))
+           id.interaction3 = factor(group_indices(., age_group, area_id))
+           # id.omega1 = factor(group_indices(., age_group, iso3)),
+           # id.omega2 = factor(group_indices(., period, iso3))
     )
 
   obs <- asfr %>%
