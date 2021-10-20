@@ -79,8 +79,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER(log_prec_rw_tips);
   PARAMETER_VECTOR(u_tips);
 
-  nll -= dnorm(beta_tips_dummy, Type(0), Type(sqrt(1/0.001)), true).sum();
-  // nll -= dnorm(beta_tips_dummy, Type(0.05), Type(0.1), true).sum();
+  // nll -= dnorm(beta_tips_dummy, Type(0), Type(sqrt(1/0.001)), true).sum();
+  nll -= dnorm(beta_tips_dummy, Type(0.05), Type(0.1), true).sum();
   // // nll -= dlgamma(beta_tips_dummy, Type(1.73), Type(1/17.326), true).sum();
   
   
@@ -185,7 +185,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER(lag_logit_phi_arima_period);
 
   PARAMETER_VECTOR(beta_period);
-  nll -= dnorm(beta_period, Type(0), Type(sqrt(1/0.001)), true).sum();
+  nll -= dnorm(beta_period, Type(-0.01309), Type(0.01441), true).sum();
 
   nll -= dnorm(lag_logit_phi_arima_period, Type(0), Type(sqrt(1/0.15)), true);
   Type phi_arima_period = 2*exp(lag_logit_phi_arima_period)/(1+exp(lag_logit_phi_arima_period))-1;
