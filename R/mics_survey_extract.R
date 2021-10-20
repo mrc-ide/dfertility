@@ -5,16 +5,16 @@
 create_surveys_mics <- function(iso3, mics_indicators) {
 
   sharepoint <- spud::sharepoint$new(Sys.getenv("SHAREPOINT_URL"))
-  folder <- sharepoint$folder(site = Sys.getenv("SHAREPOINT_SITE"), path = Sys.getenv("MICS_ORDERLY_PATH"))
+  folder <- spud::sharepoint$folder(site = Sys.getenv("SHAREPOINT_SITE"), path = Sys.getenv("MICS_ORDERLY_PATH"))
 
   mics_file_names <- folder$list() %>%
-    filter(str_detect(name, tolower(iso3))) %>%
+    dplyr::filter(str_detect(name, tolower(iso3))) %>%
     .$name %>%
     sort
 
-  mics_survey_names <- toupper(str_replace(mics_file_names, ".rds", ""))
+  mics_survey_names <- toupper(stringr::str_replace(mics_file_names, ".rds", ""))
 
-  mics_file_names <- lapply(tolower(unique(filter(mics_indicators, survey_id %in% mics_survey_names)$survey_id)),
+  mics_file_names <- lapply(tolower(unique(dplyr::filter(mics_indicators, survey_id %in% mics_survey_names)$survey_id)),
          grep, x=mics_file_names, value=TRUE
   ) %>%
     unlist %>%
@@ -22,11 +22,11 @@ create_surveys_mics <- function(iso3, mics_indicators) {
 
 
   rename_datasets_key <- mics_indicators %>%
-    filter(survey_id %in% mics_survey_names) %>%
-    filter(label == "dataset name") %>%
-    arrange(survey_id, filetype) %>%
-    group_by(survey_id) %>%
-    group_split
+    dplyr::filter(survey_id %in% mics_survey_names) %>%
+    dplyr::filter(label == "dataset name") %>%
+    dplyr::arrange(survey_id, filetype) %>%
+    dplyr::group_by(survey_id) %>%
+    dplyr::group_split
 
   paths <- file.path("sites", Sys.getenv("SHAREPOINT_SITE"), Sys.getenv("MICS_ORDERLY_PATH"), mics_file_names)
 
@@ -47,8 +47,8 @@ create_surveys_mics <- function(iso3, mics_indicators) {
   mics_dat <- Map(extract_rename_datasets, mics_dat, rename_datasets_key)
 
   names(mics_dat) <- mics_indicators %>%
-    filter(survey_id %in% mics_survey_names) %>%
-    distinct(survey_id) %>%
+    dplyr::filter(survey_id %in% mics_survey_names) %>%
+    dplyr::distinct(survey_id) %>%
     .$survey_id %>%
     sort
 
@@ -62,7 +62,7 @@ create_surveys_mics <- function(iso3, mics_indicators) {
 
 filter_mics <- function(dat, mics_indicators, survey_id_i) {
 
-  indicators <- filter(mics_indicators,
+  indicators <- dplyr::filter(mics_indicators,
                        survey_id == survey_id_i,
                        label != "dataset name"
   )
@@ -70,35 +70,35 @@ filter_mics <- function(dat, mics_indicators, survey_id_i) {
   wm <- dat$wm
   colnames(wm) <- tolower(colnames(wm))
   wm <- wm %>%
-    select(filter(indicators, filetype == "wm")$value)
-  colnames(wm) <- filter(indicators, filetype == "wm")$id
+    select(dplyr::filter(indicators, filetype == "wm")$value)
+  colnames(wm) <- dplyr::filter(indicators, filetype == "wm")$id
 
   bh <- dat$bh
   colnames(bh) <- tolower(colnames(bh))
   bh <- bh %>%
-    select(filter(indicators, filetype == "bh")$value)
-  colnames(bh) <- filter(indicators, filetype == "bh")$id
+    select(dplyr::filter(indicators, filetype == "bh")$value)
+  colnames(bh) <- dplyr::filter(indicators, filetype == "bh")$id
 
 
   hh <- dat$hh
   colnames(hh) <- tolower(colnames(hh))
   hh <- hh %>%
-    select(filter(indicators, filetype == "hh")$value)
-  colnames(hh) <- filter(indicators, filetype == "hh")$id
+    select(dplyr::filter(indicators, filetype == "hh")$value)
+  colnames(hh) <- dplyr::filter(indicators, filetype == "hh")$id
 
   df <- list()
   df$wm <- wm %>%
-    mutate(survey_id = survey_id_i) %>%
-    filter(!is.na(wdob), !is.na(cluster), !is.na(hh_number), !is.na(line_number), !is.na(doi)) %>%
-    arrange(cluster, hh_number, line_number) %>%
-    mutate(unique_id = group_indices(., cluster, hh_number, line_number))
+    dplyr::mutate(survey_id = survey_id_i) %>%
+    dplyr::filter(!is.na(wdob), !is.na(cluster), !is.na(hh_number), !is.na(line_number), !is.na(doi)) %>%
+    dplyr::arrange(cluster, hh_number, line_number) %>%
+    dplyr::mutate(unique_id = group_indices(., cluster, hh_number, line_number))
 
   df$bh <- bh %>%
-    mutate(survey_id = survey_id_i)
+    dplyr::mutate(survey_id = survey_id_i)
 
   df$hh <- hh %>%
-    mutate(survey_id = survey_id_i,
-           area_level = as.numeric(filter(indicators, id == "mics_area_level")$value)
+    dplyr::mutate(survey_id = survey_id_i,
+           area_level = as.numeric(dplyr::filter(indicators, id == "mics_area_level")$value)
     )
 
   return(df)
@@ -111,7 +111,7 @@ filter_mics <- function(dat, mics_indicators, survey_id_i) {
 #' @export
 transform_mics <- function(mics_survey_data, mics_indicators) {
 
-  mics_dat <- Map(filter_mics, mics_survey_data, list(mics_indicators), names(mics_survey_data))
+  mics_dat <- Map(dplyr::filter_mics, mics_survey_data, list(mics_indicators), names(mics_survey_data))
 
   wm <- mics_dat %>%
     lapply("[[", "wm") %>%
@@ -127,7 +127,7 @@ transform_mics <- function(mics_survey_data, mics_indicators) {
                              )
                   ) %>%
         select(-mics_area_name) %>%
-        mutate(mics_area_name_label = str_remove_all(mics_area_name_label, "\\u0093|\\u0094"),
+        dplyr::mutate(mics_area_name_label = str_remove_all(mics_area_name_label, "\\u0093|\\u0094"),
                mics_area_name_label = stringr::str_trim(mics_area_name_label))
 
     }) %>%
@@ -169,7 +169,7 @@ join_survey_areas <- function(fertility_mics_data, areas, warn=FALSE) {
   dat_merge <- dat %>%
     full_join(area_survey_level %>%
                 select(survey_id, area_id, area_name, area_level) %>%
-                filter(!is.na(survey_id)),
+                dplyr::filter(!is.na(survey_id)),
               by=c("mics_area_name_label" = "area_name", "area_level", "survey_id")
     )
 
@@ -177,7 +177,7 @@ join_survey_areas <- function(fertility_mics_data, areas, warn=FALSE) {
   if (any(is.na(dat_merge$area_id))) {
 
     missing_areas <- dat_merge %>%
-      filter(is.na(area_id)) %>%
+      dplyr::filter(is.na(area_id)) %>%
       select(survey_id, mics_area_name_label, area_id) %>%
       distinct %>%
       rename(mics_area_name = mics_area_name_label)
@@ -191,7 +191,7 @@ join_survey_areas <- function(fertility_mics_data, areas, warn=FALSE) {
   if(any(is.na(dat_merge$cluster))) {
 
     missing_areas <- dat_merge %>%
-      filter(is.na(cluster)) %>%
+      dplyr::filter(is.na(cluster)) %>%
       select(survey_id, mics_area_name_label, area_id) %>%
       distinct %>%
       rename(area_name = mics_area_name_label)
@@ -227,7 +227,7 @@ make_asfr_inputs <- function(mics_survey_areas, mics_survey_data) {
     select(survey_id, cluster, hh_number, line_number, unique_id) %>%
     left_join(dat$bh %>% select(survey_id, cluster, hh_number, line_number, cdob)) %>%
     select(survey_id, unique_id, cdob) %>%
-    filter(!is.na(cdob))
+    dplyr::filter(!is.na(cdob))
 
   df
 
