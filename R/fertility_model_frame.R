@@ -243,7 +243,7 @@ make_model_frames_dev <- function(iso3,
     "model_age_group" = filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group
   ) %>%
     bind_rows(data.frame(
-      "age_group" = "Y015-Y049",
+      "age_group" = "Y015_Y049",
       "model_age_group" = filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group
     ))
 
@@ -270,7 +270,7 @@ make_model_frames_dev <- function(iso3,
 
   tfr_out <- crossing(
     area_id = area_aggregation$area_id,
-    age_group = "Y015-Y049",
+    age_group = "Y015_Y049",
     period = unique(mf_model$period),
     variable = "tfr"
   ) %>%
@@ -279,7 +279,7 @@ make_model_frames_dev <- function(iso3,
     droplevels()
 
   tfr_join_out <- crossing(area_id = area_aggregation$area_id,
-                           age_aggregation %>% filter(age_group == "Y015-Y049"),
+                           age_aggregation %>% filter(age_group == "Y015_Y049"),
                            period = unique(mf_model$period)) %>%
     full_join(
       aggregate_mf %>%
@@ -338,6 +338,16 @@ make_model_frames_dev <- function(iso3,
 
   X_extract_dhs <- spMatrix(nrow(dhs_join), nrow(mf$observations$full_obs), i=dhs_join$row_idx, j=dhs_join$col_idx, x=dhs_join$x)
 
+  phia_join <- mf$observations$full_obs %>%
+    mutate(col_idx = row_number()) %>%
+    select(col_idx, survtype) %>%
+    filter(survtype == "PHIA") %>%
+    mutate(row_idx = row_number(),
+           x=1)
+
+  X_extract_phia <- spMatrix(nrow(phia_join), nrow(mf$observations$full_obs), i=phia_join$row_idx, j=phia_join$col_idx, x=phia_join$x)
+
+
   mics_join <- mf$observations$full_obs %>%
     mutate(col_idx = row_number()) %>%
     select(col_idx, survtype) %>%
@@ -351,6 +361,7 @@ make_model_frames_dev <- function(iso3,
   X_extract$X_extract_ais <- X_extract_ais
   X_extract$X_extract_dhs <- X_extract_dhs
   X_extract$X_extract_mics <- X_extract_mics
+  X_extract$X_extract_phia <- X_extract_phia
 
   R <- list()
   R$R_spatial <- make_adjacency_matrix(areas, naomi_level)
