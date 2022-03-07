@@ -5,7 +5,7 @@
 create_surveys_mics <- function(iso3, mics_indicators) {
 
   sharepoint <- spud::sharepoint$new(Sys.getenv("SHAREPOINT_URL"))
-  folder <- spud::sharepoint$folder(site = Sys.getenv("SHAREPOINT_SITE"), path = Sys.getenv("MICS_ORDERLY_PATH"))
+  folder <- sharepoint$folder(site = Sys.getenv("SHAREPOINT_SITE"), path = Sys.getenv("MICS_ORDERLY_PATH"))
 
   mics_file_names <- folder$list() %>%
     dplyr::filter(str_detect(name, tolower(iso3))) %>%
@@ -26,7 +26,7 @@ create_surveys_mics <- function(iso3, mics_indicators) {
     dplyr::filter(label == "dataset name") %>%
     dplyr::arrange(survey_id, filetype) %>%
     dplyr::group_by(survey_id) %>%
-    dplyr::group_split
+    dplyr::group_split()
 
   paths <- file.path("sites", Sys.getenv("SHAREPOINT_SITE"), Sys.getenv("MICS_ORDERLY_PATH"), mics_file_names)
 
@@ -91,7 +91,8 @@ filter_mics <- function(dat, mics_indicators, survey_id_i) {
     dplyr::mutate(survey_id = survey_id_i) %>%
     dplyr::filter(!is.na(wdob), !is.na(cluster), !is.na(hh_number), !is.na(line_number), !is.na(doi)) %>%
     dplyr::arrange(cluster, hh_number, line_number) %>%
-    dplyr::mutate(unique_id = group_indices(., cluster, hh_number, line_number))
+    dplyr::group_by(cluster, hh_number, line_number) %>%
+    dplyr::mutate(unique_id = cur_group_id())
 
   df$bh <- bh %>%
     dplyr::mutate(survey_id = survey_id_i)
@@ -111,7 +112,7 @@ filter_mics <- function(dat, mics_indicators, survey_id_i) {
 #' @export
 transform_mics <- function(mics_survey_data, mics_indicators) {
 
-  mics_dat <- Map(dplyr::filter_mics, mics_survey_data, list(mics_indicators), names(mics_survey_data))
+  mics_dat <- Map(filter_mics, mics_survey_data, list(mics_indicators), names(mics_survey_data))
 
   wm <- mics_dat %>%
     lapply("[[", "wm") %>%

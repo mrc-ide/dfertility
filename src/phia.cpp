@@ -63,7 +63,7 @@ Type objective_function<Type>::operator() ()
 
   DATA_VECTOR(log_offset_ais);
   DATA_VECTOR(births_obs_ais);
-  
+
   DATA_VECTOR(log_offset_phia);
   DATA_VECTOR(births_obs_phia);
 
@@ -85,15 +85,16 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(u_tips);
 
   // nll -= dnorm(beta_tips_dummy, Type(0), Type(sqrt(1/0.001)), true).sum();
-  nll -= dnorm(beta_tips_dummy, Type(0.05), Type(0.1), true).sum();
-  // // nll -= dlgamma(beta_tips_dummy, Type(1.73), Type(1/17.326), true).sum();
+  // nll -= dnorm(beta_tips_dummy, Type(0.05), Type(0.1), true).sum();
+  nll -= dnorm(beta_tips_dummy, Type(0.1), Type(0.2), true).sum();
 
 
   // nll -= dlgamma(log_prec_rw_tips, Type(1), Type(20000), true);
   // nll -= dlgamma(log_prec_rw_tips, Type(31), Type(1/3.922), true);
 
   Type prec_rw_tips = exp(log_prec_rw_tips);
-  nll -= dgamma(prec_rw_tips, Type(1), Type(2000), true);
+  // nll -= dgamma(prec_rw_tips, Type(1), Type(2000), true);
+  nll -= dnorm(prec_rw_tips, Type(5), Type(2.73));
 
   nll -= Type(-0.5) * (u_tips * (R_tips * u_tips)).sum();
   nll -= dnorm(u_tips.sum(), Type(0), Type(0.01) * u_tips.size(), true);
@@ -164,7 +165,8 @@ Type objective_function<Type>::operator() ()
   // nll -= dlgamma(log_prec_rw_period, Type(1), Type(20000), true);
   // Type log_prec_rw_period = 4.11;
   Type prec_rw_period = exp(log_prec_rw_period);
-  nll -= dgamma(prec_rw_period, Type(1), Type(2000), true);
+  // nll -= dgamma(prec_rw_period, Type(1), Type(2000), true);
+  nll -= dnorm(prec_rw_period, Type(3.6), Type(2.499), true);
 
 
   // // RW
@@ -407,10 +409,10 @@ Type objective_function<Type>::operator() ()
                                 + log_offset_ais
 
                 );
-  
+
   vector<Type> mu_obs_pred_phia(X_extract_phia * (M_full_obs * log(lambda_out))
                                  + log_offset_phia
-                                 
+
   );
 
   // PARAMETER(log_overdispersion);
