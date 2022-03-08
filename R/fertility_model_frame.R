@@ -193,6 +193,8 @@ make_model_frames_dev <- function(iso3,
     dplyr::select(survey_id, survtype, area_id, area_level, period, age_group, tips, births, pys) %>%
     # left_join(full_frame) %>%
     mutate(tips_dummy = as.integer(tips > 5),
+           tips_dummy_10 = as.integer(tips == 10),
+           tips_dummy_9_11 = as.integer(tips %in% c(9, 11)),
            tips_f = factor(tips),
            ais_dummy = ifelse(survtype %in% c("MIS", "AIS"), 1, 0),
            mics_dummy = ifelse(survtype == "MICS", 1, 0),
@@ -317,6 +319,8 @@ make_model_frames_dev <- function(iso3,
   Z$Z_tips_dhs <- sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% filter(survtype == "DHS"))
   Z$Z_tips_ais <- sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% filter(survtype %in% c("AIS", "MIS")))
   Z$X_tips_dummy <- model.matrix(~0 + tips_dummy, mf$observations$full_obs %>% filter(survtype == "DHS"))
+  Z$X_tips_dummy_10 <- model.matrix(~0 + tips_dummy_10, mf$observations$full_obs %>% filter(survtype == "DHS"))
+  Z$X_tips_dummy_9_11 <- model.matrix(~0 + tips_dummy_9_11, mf$observations$full_obs %>% filter(survtype == "DHS"))
   Z$X_urban_dummy <- model.matrix(~0 + urban, mf$mf_model)
   Z$X_period <- as(as.matrix(mf_model$id.period), "dgTMatrix")
 
