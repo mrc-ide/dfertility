@@ -1,2 +1,7 @@
 exportPattern("^[[:alpha:]]+")
-useDynLib(dfertility, .registration = TRUE)
+useDynLib(ar1, .registration = TRUE)
+useDynLib(ar1_trend, .registration = TRUE)
+useDynLib(arima, .registration = TRUE)
+useDynLib(arima_trend, .registration = TRUE)
+useDynLib(rw, .registration = TRUE)
+useDynLib(rw1_trend, .registration = TRUE)
