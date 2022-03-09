@@ -1,4 +1,4 @@
-all: ar1_trend.dll ar1.dll arima_trend.dll arima.dll rw.dll rw1_trend.dll
+all: ar1_trend.dll ar1.dll arima_trend.dll arima.dll rw.dll rw1_trend.dll no_tips.dll
 	# Comment here preserves the prior tab
 ar1_trend.dll: ar1_trend.cpp
 	Rscript --vanilla -e "TMB::compile('ar1_trend.cpp', '-O1 -g',DLLFLAGS='')"
@@ -12,6 +12,8 @@ rw.dll: rw.cpp
 	Rscript --vanilla -e "TMB::compile('rw.cpp', '-O1 -g',DLLFLAGS='')"
 rw1_trend.dll: rw1_trend.cpp
 	Rscript --vanilla -e "TMB::compile('rw1_trend.cpp', '-O1 -g',DLLFLAGS='')"
+no_tips.dll: no_tips.cpp
+	Rscript --vanilla -e "TMB::compile('no_tips.cpp', '-O1 -g',DLLFLAGS='')"
 
 clean:
 	rm -rf *.dll
