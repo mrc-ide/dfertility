@@ -51,7 +51,9 @@ assign_tips <- function(ir, single_tips) {
 
 map_ir_to_areas <- function(ir, cluster_list, single_tips = TRUE) {
 
-  ir <- Map(ir_by_area, ir, cluster_list[names(ir)], n=1:length(ir), total=length(ir)) %>%
+  mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
+
+  ir <- mcMap(ir_by_area, ir, cluster_list[names(ir)], n=1:length(ir), total=length(ir), mc.cores = mc.cores) %>%
     unlist(recursive = FALSE)
 
   tips_surv <- assign_tips(ir, single_tips)
@@ -406,6 +408,8 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
 #' @export
 #'
 calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
+
+  mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
 
   cluster_list <- clusters %>%
     rename(area_id = geoloc_area_id) %>%
