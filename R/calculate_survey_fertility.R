@@ -208,6 +208,8 @@ clusters_to_surveys <- function(iso3, surveys, cluster_areas, level, single_tips
 #'
 calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
 
+  mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
+
   mics_wm_asfr <- mics_wm %>%
     type.convert() %>%
     mutate(survey_id = factor(survey_id),
@@ -227,7 +229,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
   message("Calculating district-level MICS ASFR")
 
   #' For model:
-  mics_asfr <- Map(calc_asfr, mics_wm_asfr,
+  mics_asfr <- parallel::mcMap(calc_asfr, mics_wm_asfr,
                    by = list(~area_id + survey_id),
                    tips = list(c(0:15)),
                    agegr= list(3:10*5),
@@ -241,7 +243,8 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
                    varmethod = list("none"),
                    bhdata = mics_births_asfr,
                    bvars = list("cdob"),
-                   counts = TRUE) %>%
+                   counts = TRUE,
+                   mc.cores = mc.cores) %>%
     bind_rows %>%
     type.convert() %>%
     separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
@@ -255,7 +258,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
 
   message("Calculating aggregate MICS fertility rates")
   # For plotting:
-  mics_asfr_plot <- Map(calc_asfr, mics_wm_asfr,
+  mics_asfr_plot <- mcMap(calc_asfr, mics_wm_asfr,
                         by = list(~area_id + survey_id),
                         tips = list(c(0,15)),
                         agegr= list(3:10*5),
@@ -269,7 +272,8 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
                         varmethod = list("none"),
                         bhdata = mics_births_asfr,
                         bvars = list("cdob"),
-                        counts = TRUE) %>%
+                        counts = TRUE,
+                        mc.cores = mc.cores) %>%
     bind_rows %>%
     type.convert() %>%
     separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
@@ -283,7 +287,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
     left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
     select(-agegr)
 
-  mics_asfr_plot_nat <- Map(calc_asfr, mics_wm_asfr,
+  mics_asfr_plot_nat <- mcMap(calc_asfr, mics_wm_asfr,
                             by = list(~survey_id),
                             tips = list(c(0,15)),
                             agegr= list(3:10*5),
@@ -297,7 +301,8 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
                             varmethod = list("none"),
                             bhdata = mics_births_asfr,
                             bvars = list("cdob"),
-                            counts = TRUE) %>%
+                            counts = TRUE,
+                            mc.cores = mc.cores) %>%
     bind_rows %>%
     type.convert() %>%
     separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
@@ -312,7 +317,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
     left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
     select(-agegr)
 
-  mics_tfr_plot <- Map(calc_tfr, mics_wm_asfr,
+  mics_tfr_plot <- mcMap(calc_tfr, mics_wm_asfr,
                        by = list(~area_id + survey_id),
                        tips = list(c(0,15)),
                        agegr= list(3:10*5),
@@ -324,7 +329,8 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
                        intv = list("doi"),
                        weight = list("weight"),
                        bhdata = mics_births_asfr,
-                       bvars = list("cdob")) %>%
+                       bvars = list("cdob"),
+                       mc.cores = mc.cores) %>%
     bind_rows %>%
     type.convert() %>%
     separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
@@ -337,7 +343,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
            variable = "tfr"
     )
 
-  mics_tfr_plot_nat <- Map(calc_tfr, mics_wm_asfr,
+  mics_tfr_plot_nat <- mcMap(calc_tfr, mics_wm_asfr,
                            by = list(~survey_id),
                            tips = list(c(0,15)),
                            agegr= list(3:10*5),
@@ -349,7 +355,8 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
                            intv = list("doi"),
                            weight = list("weight"),
                            bhdata = mics_births_asfr,
-                           bvars = list("cdob")) %>%
+                           bvars = list("cdob"),
+                           mc.cores = mc.cores) %>%
     bind_rows %>%
     type.convert() %>%
     separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
@@ -426,14 +433,15 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
 
   message("Calculating district-level ASFR")
 
-  asfr <- Map(calc_asfr, dat$ir,
+  asfr <- mcMap(calc_asfr, dat$ir,
               by = list(~survey_id + survtype + survyear + area_id),
               tips = list(c(0:15)),
               agegr= list(3:10*5),
               period = list(1995:2020),
               strata = list(NULL),
               varmethod = list("none"),
-              counts = TRUE) %>%
+              counts = TRUE,
+              mc.cores = mc.cores) %>%
     bind_rows %>%
     type.convert %>%
     filter(period<=survyear) %>%
@@ -444,14 +452,15 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
 
   message("Calculating aggregate fertility rates")
 
-  asfr_plot <- Map(calc_asfr, dat_admin1$ir,
+  asfr_plot <- mcMap(calc_asfr, dat_admin1$ir,
                    by = list(~survey_id + survtype + survyear + area_id),
                    tips = dat_admin1$tips_surv,
                    agegr= list(3:10*5),
                    period = list(1995:2020),
                    strata = list(NULL),
                    varmethod = list("none"),
-                   counts = TRUE) %>%
+                   counts = TRUE,
+                   mc.cores = mc.cores) %>%
     bind_rows %>%
     type.convert %>%
     filter(period<=survyear) %>%
@@ -462,14 +471,15 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
     left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
     select(-agegr)
 
-  asfr_plot_nat <- Map(calc_asfr, ir,
+  asfr_plot_nat <- mcMap(calc_asfr, ir,
                        # by = list(~survey_id + survtype + survyear + area_id),
                        tips = list(c(0,15)),
                        agegr= list(3:10*5),
                        period = list(1995:2020),
                        strata = list(NULL),
                        varmethod = list("none"),
-                       counts = TRUE) %>%
+                       counts = TRUE,
+                       mc.cores = mc.cores) %>%
     bind_rows(.id = "survey_id") %>%
     separate(survey_id, into=c(NA, "survyear", "survtype"), sep=c(3,7), remove=FALSE, convert=TRUE) %>%
     type.convert %>%
@@ -483,12 +493,13 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
     select(-agegr)
 
   calc_tfr_wrapper <- function() {
-    Map(calc_tfr, dat_admin1$ir,
+    mcMap(calc_tfr, dat_admin1$ir,
         by = list(~survey_id + survtype + survyear + area_id),
         tips = dat_admin1$tips_surv,
         agegr= list(3:10*5),
         period = list(1995:2020),
-        strata = list(NULL)) %>%
+        strata = list(NULL),
+        mc.cores = mc.cores) %>%
       bind_rows() %>%
       type.convert %>%
       filter(period<=survyear) %>%
@@ -523,12 +534,13 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
   #          variable = "tfr") %>%
   #   rename(value = tfr)
 
-  tfr_plot_nat <- Map(calc_tfr, ir,
+  tfr_plot_nat <- mcMap(calc_tfr, ir,
                       # by = list(~survey_id + survtype + survyear + area_id),
                       tips = list(c(0,15)),
                       agegr= list(3:10*5),
                       period = list(1995:2020),
-                      strata = list(NULL)) %>%
+                      strata = list(NULL),
+                      mc.cores = mc.cores) %>%
     bind_rows(.id = "survey_id") %>%
     separate(survey_id, into=c(NA, "survyear", "survtype"), sep=c(3,7), remove=FALSE, convert=TRUE) %>%
     type.convert %>%

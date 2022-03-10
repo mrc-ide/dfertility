@@ -1,7 +1,7 @@
 Package: dfertility
 Type: Package
 Title: District level estimation of age-specific fertility
-Version: 0.1.19
+Version: 0.1.20
 Authors@R: 
     person(given = "Oli",
            family = "Stevens",
@@ -24,6 +24,7 @@ Imports:
     here,
     magrittr,
     dplyr,
+    parallel,
     mvtnorm,
     rdhs,
     sf,
