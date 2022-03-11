@@ -374,9 +374,9 @@ Type objective_function<Type>::operator() ()
                      + Z_interaction3 * eta3_v * sqrt(1/prec_eta3)
                      );
 
-  PARAMETER_VECTOR(beta_spike_2000);
-  PARAMETER_VECTOR(beta_spike_1999);
-  PARAMETER_VECTOR(beta_spike_2001);
+  // PARAMETER_VECTOR(beta_spike_2000);
+  // PARAMETER_VECTOR(beta_spike_1999);
+  // PARAMETER_VECTOR(beta_spike_2001);
 
   // DATA_MATRIX(X_spike_2000_dhs);
   // DATA_MATRIX(X_spike_1999_dhs);
@@ -386,13 +386,13 @@ Type objective_function<Type>::operator() ()
   // DATA_MATRIX(X_spike_1999_ais);
   // DATA_MATRIX(X_spike_2001_ais);
 
-  DATA_MATRIX(X_spike_2000);
-  DATA_MATRIX(X_spike_1999);
-  DATA_MATRIX(X_spike_2001);
-
-  nll -= dnorm(beta_spike_2000, Type(0), Type(2.5), true).sum();
-  nll -= dnorm(beta_spike_1999, Type(0), Type(2.5), true).sum();
-  nll -= dnorm(beta_spike_2001, Type(0), Type(2.5), true).sum();
+  // DATA_MATRIX(X_spike_2000);
+  // DATA_MATRIX(X_spike_1999);
+  // DATA_MATRIX(X_spike_2001);
+  // 
+  // nll -= dnorm(beta_spike_2000, Type(0), Type(2.5), true).sum();
+  // nll -= dnorm(beta_spike_1999, Type(0), Type(2.5), true).sum();
+  // nll -= dnorm(beta_spike_2001, Type(0), Type(2.5), true).sum();
 
   vector<Type> mu_obs_pred_naomi(M_naomi_obs * log_lambda
                           + log_offset_naomi
@@ -411,27 +411,27 @@ Type objective_function<Type>::operator() ()
 
   // vector<Type> u_smooth_lh(Z_smooth_iid * u_smooth_iid * sqrt(1/prec_smooth_iid));
   vector<Type> tips_lh(Z_tips * u_tips_constr * sqrt(1/prec_rw_tips));
-  vector<Type> spike_1999_lh(X_spike_1999 * beta_spike_1999);
-  vector<Type> spike_2000_lh(X_spike_2000 * beta_spike_2000);
-  vector<Type> spike_2001_lh(X_spike_2001 * beta_spike_2001);
+  // vector<Type> spike_1999_lh(X_spike_1999 * beta_spike_1999);
+  // vector<Type> spike_2000_lh(X_spike_2000 * beta_spike_2000);
+  // vector<Type> spike_2001_lh(X_spike_2001 * beta_spike_2001);
 
   vector<Type> mu_obs_pred_dhs(X_extract_dhs * (M_full_obs * log(lambda_out))
                                 + X_extract_dhs * tips_lh
                                 + X_tips_dummy * beta_tips_dummy          // TIPS fixed effect
                                 + X_tips_dummy_10 * beta_tips_dummy_10          // TIPS fixed effect
                                 // + X_tips_dummy_9_11 * beta_tips_dummy_9_11          // TIPS fixed effect
-                                + X_extract_dhs * spike_1999_lh
-                                + X_extract_dhs * spike_2000_lh
-                                + X_extract_dhs * spike_2001_lh
+                                // + X_extract_dhs * spike_1999_lh
+                                // + X_extract_dhs * spike_2000_lh
+                                // + X_extract_dhs * spike_2001_lh
                                 + log_offset_dhs
 
                 );
 
   vector<Type> mu_obs_pred_ais(X_extract_ais * (M_full_obs * log(lambda_out))
                                 + X_extract_ais * tips_lh
-                                + X_extract_ais * spike_1999_lh
-                                + X_extract_ais * spike_2000_lh
-                                + X_extract_ais * spike_2001_lh
+                                // + X_extract_ais * spike_1999_lh
+                                // + X_extract_ais * spike_2000_lh
+                                // + X_extract_ais * spike_2001_lh
                                 + log_offset_ais
 
                 );
@@ -479,9 +479,9 @@ Type objective_function<Type>::operator() ()
 
     vector<Type> mu_obs_pred_mics(X_extract_mics * (M_full_obs * log(lambda_out))
                                   // + Z_tips_mics * u_tips_mics_constr * sqrt(1/prec_rw_tips)     // TIPS RW
-                                  + X_extract_mics * spike_1999_lh
-                                  + X_extract_mics * spike_2000_lh
-                                  + X_extract_mics * spike_2001_lh
+                                  // + X_extract_mics * spike_1999_lh
+                                  // + X_extract_mics * spike_2000_lh
+                                  // + X_extract_mics * spike_2001_lh
                                   + log_offset_mics
 
                 );

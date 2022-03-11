@@ -88,8 +88,8 @@ Type objective_function<Type>::operator() ()
   DATA_SPARSE_MATRIX(A_full_obs);
   DATA_SPARSE_MATRIX(A_tfr_out);
 
-  // DATA_MATRIX(X_urban_dummy);
-  // PARAMETER_VECTOR(beta_urban_dummy);
+  DATA_MATRIX(X_urban_dummy);
+  PARAMETER_VECTOR(beta_urban_dummy);
 
   nll -= dnorm(beta_0, Type(0), Type(sqrt(1/0.001)), true);
 
@@ -122,7 +122,7 @@ Type objective_function<Type>::operator() ()
 
   /////////////////
 
-  // nll -= dnorm(beta_urban_dummy, Type(0), Type(sqrt(1/0.001)), true).sum();
+  nll -= dnorm(beta_urban_dummy, Type(0), Type(sqrt(1/0.001)), true).sum();
 
   ///////////////////
 
@@ -365,7 +365,7 @@ Type objective_function<Type>::operator() ()
                      + X_period * beta_period
                      // + Z_spatial * spatial
                      + Z_spatial * u_spatial_str * sqrt(1/prec_spatial)
-                     // + X_urban_dummy * beta_urban_dummy
+                     + X_urban_dummy * beta_urban_dummy
                      // + Z_country * u_country * sqrt(1/prec_country)
                      // + Z_omega1 * omega1_v * sqrt(1/prec_omega1)
                      // + Z_omega2 * omega2_v * sqrt(1/prec_omega2)
