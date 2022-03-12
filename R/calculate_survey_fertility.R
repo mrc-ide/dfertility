@@ -3,7 +3,7 @@ get_fertility_surveys <- function(surveys) {
   ird <- dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
 
   ird <- ird %>%
-    mutate(path = unlist(get_datasets(.))) %>%
+    mutate(path = unlist(get_datasets(., clear_cache = TRUE))) %>%
     bind_rows()
 
   ir <- lapply(ird$path, readRDS) %>%
