@@ -321,13 +321,13 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
     group_by(survey_id, period, area_id) %>%
     summarise(value = 5*sum(value)) %>%
     mutate(variable = "tfr") %>%
-    filter(tfr > 0.5)
+    filter(value > 0.5)
 
   mics_tfr_plot_nat <- mics_asfr_plot_nat %>%
     group_by(survey_id, period, area_id) %>%
     summarise(value = 5*sum(value)) %>%
     mutate(variable = "tfr") %>%
-    filter(tfr > 0.5)
+    filter(value > 0.5)
 
   missing_data <- mics_asfr %>%
     group_by(survey_id, tips) %>%
@@ -454,13 +454,13 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
     group_by(survey_id, period, area_id) %>%
     summarise(value = 5*sum(value)) %>%
     mutate(variable = "tfr") %>%
-    filter(tfr > 0.5)
+    filter(value > 0.5)
 
   tfr_plot_nat <- asfr_plot_nat %>%
     group_by(survey_id, period, area_id) %>%
     summarise(value = 5*sum(value)) %>%
     mutate(variable = "tfr") %>%
-    filter(tfr > 0.5)
+    filter(value > 0.5)
 
   missing_data <- asfr %>%
     group_by(survey_id, tips) %>%
