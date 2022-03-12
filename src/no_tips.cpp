@@ -345,16 +345,16 @@ Type objective_function<Type>::operator() ()
 
   //Smooth iid
 
-  // PARAMETER(log_prec_smooth_iid);
-  // DATA_SPARSE_MATRIX(R_smooth_iid);
+  PARAMETER(log_prec_smooth_iid);
+  DATA_SPARSE_MATRIX(R_smooth_iid);
 
-  // DATA_SPARSE_MATRIX(Z_smooth_iid);
-  // PARAMETER_VECTOR(u_smooth_iid);
+  DATA_SPARSE_MATRIX(Z_smooth_iid);
+  PARAMETER_VECTOR(u_smooth_iid);
 
-  // Type prec_smooth_iid = exp(log_prec_smooth_iid);
-  // nll -= dgamma(prec_smooth_iid, Type(1), Type(2000), true);
+  Type prec_smooth_iid = exp(log_prec_smooth_iid);
+  nll -= dgamma(prec_smooth_iid, Type(1), Type(2000), true);
 
-  // nll -= Type(-0.5) * (u_smooth_iid * (R_smooth_iid * u_smooth_iid)).sum();
+  nll -= Type(-0.5) * (u_smooth_iid * (R_smooth_iid * u_smooth_iid)).sum();
 
   ///////////////////////
 
@@ -409,7 +409,7 @@ Type objective_function<Type>::operator() ()
   
   // nll -= dunif(tfr_out, Type(0), Type(10), true).sum();
 
-  // vector<Type> u_smooth_lh(Z_smooth_iid * u_smooth_iid * sqrt(1/prec_smooth_iid));
+  vector<Type> u_smooth_lh(Z_smooth_iid * u_smooth_iid * sqrt(1/prec_smooth_iid));
   vector<Type> tips_lh(Z_tips * u_tips_constr * sqrt(1/prec_rw_tips));
   vector<Type> spike_1999_lh(X_spike_1999 * beta_spike_1999);
   vector<Type> spike_2000_lh(X_spike_2000 * beta_spike_2000);
@@ -423,6 +423,7 @@ Type objective_function<Type>::operator() ()
                                 + X_extract_dhs * spike_1999_lh
                                 + X_extract_dhs * spike_2000_lh
                                 + X_extract_dhs * spike_2001_lh
+                                + X_extract_dhs * u_smooth_lh
                                 + log_offset_dhs
 
                 );
@@ -432,6 +433,7 @@ Type objective_function<Type>::operator() ()
                                 + X_extract_ais * spike_1999_lh
                                 + X_extract_ais * spike_2000_lh
                                 + X_extract_ais * spike_2001_lh
+                                + X_extract_ais * u_smooth_lh
                                 + log_offset_ais
 
                 );
@@ -482,6 +484,7 @@ Type objective_function<Type>::operator() ()
                                   + X_extract_mics * spike_1999_lh
                                   + X_extract_mics * spike_2000_lh
                                   + X_extract_mics * spike_2001_lh
+                                  + X_extract_mics * u_smooth_lh
                                   + log_offset_mics
 
                 );
@@ -525,6 +528,8 @@ Type objective_function<Type>::operator() ()
   REPORT(log_prec_rw_age);
   REPORT(log_prec_rw_period);
   // REPORT(log_prec_rw_tips);
+
+  REPORT(log_prec_smooth_iid);
 
   REPORT(beta_period);
   // REPORT(phi_period);
