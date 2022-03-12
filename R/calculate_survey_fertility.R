@@ -316,56 +316,18 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
     left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
     select(-agegr)
 
-  mics_tfr_plot <- Map(calc_tfr, mics_wm_asfr,
-                       by = list(~area_id + survey_id),
-                       tips = list(c(0,15)),
-                       agegr= list(3:10*5),
-                       period = list(1995:2020),
-                       clusters = list(~cluster),
-                       strata = list(NULL),
-                       id = list("unique_id"),
-                       dob = list("wdob"),
-                       intv = list("doi"),
-                       weight = list("weight"),
-                       bhdata = mics_births_asfr,
-                       bvars = list("cdob")) %>%
-    bind_rows %>%
-    type.convert() %>%
-    separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
-    filter(period <= survyear,
-           tfr > 0.5) %>%
-    rename(value = tfr) %>%
-    # rename(age_group = agegr) %>%
-    mutate(survtype = "MICS",
-           iso3 = iso3,
-           variable = "tfr"
-    )
 
-  mics_tfr_plot_nat <- Map(calc_tfr, mics_wm_asfr,
-                           by = list(~survey_id),
-                           tips = list(c(0,15)),
-                           agegr= list(3:10*5),
-                           period = list(1995:2020),
-                           clusters = list(~cluster),
-                           strata = list(NULL),
-                           id = list("unique_id"),
-                           dob = list("wdob"),
-                           intv = list("doi"),
-                           weight = list("weight"),
-                           bhdata = mics_births_asfr,
-                           bvars = list("cdob")) %>%
-    bind_rows %>%
-    type.convert() %>%
-    separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
-    filter(period <= survyear,
-           tfr > 0.5) %>%
-    rename(value = tfr) %>%
-    # rename(age_group = agegr) %>%
-    mutate(survtype = "MICS",
-           iso3 = iso3,
-           area_id = iso3,
-           variable = "tfr"
-    )
+  mics_tfr_plot <- mics_asfr_plot %>%
+    group_by(survey_id, period, area_id) %>%
+    summarise(value = 5*sum(value)) %>%
+    mutate(variable = "tfr") %>%
+    filter(tfr > 0.5)
+
+  mics_tfr_plot_nat <- mics_asfr_plot_nat %>%
+    group_by(survey_id, period, area_id) %>%
+    summarise(value = 5*sum(value)) %>%
+    mutate(variable = "tfr") %>%
+    filter(tfr > 0.5)
 
   missing_data <- mics_asfr %>%
     group_by(survey_id, tips) %>%
@@ -488,60 +450,17 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
     left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
     select(-agegr)
 
-  calc_tfr_wrapper <- function() {
-    Map(calc_tfr, dat_admin1$ir,
-        by = list(~survey_id + survtype + survyear + area_id),
-        tips = dat_admin1$tips_surv,
-        agegr= list(3:10*5),
-        period = list(1995:2020),
-        strata = list(NULL)) %>%
-      bind_rows() %>%
-      type.convert %>%
-      filter(period<=survyear) %>%
-      mutate(iso3 = iso3,
-             variable = "tfr") %>%
-      rename(value = tfr)
-  }
+  tfr_plot <- asfr_plot %>%
+    group_by(survey_id, period, area_id) %>%
+    summarise(value = 5*sum(value)) %>%
+    mutate(variable = "tfr") %>%
+    filter(tfr > 0.5)
 
-  possibly_tfr <- possibly(calc_tfr_wrapper, otherwise = NULL)
-
-  tfr_plot <- possibly_tfr()
-
-  if(is.null(tfr_plot))
-    tfr_plot <- asfr_plot %>%
-      group_by(iso3, area_id, survey_id, survyear, survtype, period, age_group) %>%
-      summarise(asfr = sum(births)/sum(pys)) %>%
-      group_by(iso3, area_id, survey_id, survyear, survtype, period) %>%
-      summarise(value = 5*sum(asfr)) %>%
-      mutate(iso3 = iso3,
-           variable = "tfr")
-
-  # tfr_plot <- Map(calc_tfr, dat_admin1$ir,
-  #                 by = list(~survey_id + survtype + survyear + area_id),
-  #                 tips = dat_admin1$tips_surv,
-  #                 agegr= list(3:10*5),
-  #                 period = list(1995:2020),
-  #                 strata = list(NULL)) %>%
-  #   bind_rows() %>%
-  #   type.convert %>%
-  #   filter(period<=survyear) %>%
-  #   mutate(iso3 = iso3,
-  #          variable = "tfr") %>%
-  #   rename(value = tfr)
-
-  tfr_plot_nat <- Map(calc_tfr, ir,
-                      # by = list(~survey_id + survtype + survyear + area_id),
-                      tips = list(c(0,15)),
-                      agegr= list(3:10*5),
-                      period = list(1995:2020),
-                      strata = list(NULL)) %>%
-    bind_rows(.id = "survey_id") %>%
-    separate(survey_id, into=c(NA, "survyear", "survtype"), sep=c(3,7), remove=FALSE, convert=TRUE) %>%
-    type.convert %>%
-    mutate(iso3 = iso3,
-           variable = "tfr",
-           area_id = iso3) %>%
-    rename(value = tfr)
+  tfr_plot_nat <- asfr_plot_nat %>%
+    group_by(survey_id, period, area_id) %>%
+    summarise(value = 5*sum(value)) %>%
+    mutate(variable = "tfr") %>%
+    filter(tfr > 0.5)
 
   missing_data <- asfr %>%
     group_by(survey_id, tips) %>%
