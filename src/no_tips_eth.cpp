@@ -30,6 +30,7 @@ Type objective_function<Type>::operator() ()
   // DATA_SPARSE_MATRIX(M_aggregated_obs);
 
   DATA_MATRIX(X_tips_dummy);
+DATA_MATRIX(X_tips_dummy_10);
   DATA_MATRIX(X_tips_dummy_10);
   DATA_MATRIX(X_tips_dummy_9_11);
 
@@ -96,10 +97,12 @@ Type objective_function<Type>::operator() ()
   ///////////////////
 
   PARAMETER_VECTOR(beta_tips_dummy);
+PARAMETER_VECTOR(beta_tips_dummy_10);
   PARAMETER(log_prec_rw_tips);
   PARAMETER_VECTOR(u_tips);
 
   // nll -= dnorm(beta_tips_dummy, Type(0), Type(sqrt(1/0.001)), true).sum();
+nll -= dnorm(beta_tips_dummy_10, Type(0), Type(sqrt(1/0.001)), true).sum();
   nll -= dnorm(beta_tips_dummy, Type(0.05), Type(0.1), true).sum();
   // nll -= dnorm(beta_tips_dummy, Type(0.13), Type(5.899), true).sum();
 
@@ -417,7 +420,8 @@ Type objective_function<Type>::operator() ()
 
   vector<Type> mu_obs_pred_dhs(X_extract_dhs * (M_full_obs * log(lambda_out))
                                 + X_extract_dhs * tips_lh
-                                + X_tips_dummy * beta_tips_dummy          // TIPS fixed effect
+                                + X_tips_dummy * beta_tips_dummy
++ X_tips_dummy_10 * beta_tips_dummy_10          // TIPS fixed effect
                                 + X_tips_dummy_10 * beta_tips_dummy_10          // TIPS fixed effect
                                 // + X_tips_dummy_9_11 * beta_tips_dummy_9_11          // TIPS fixed effect
                                 + X_extract_dhs * spike_1999_lh
@@ -529,7 +533,7 @@ Type objective_function<Type>::operator() ()
   REPORT(beta_period);
   // REPORT(phi_period);
   REPORT(phi_arima_period);
-REPORT(log_prec_smooth_iid);
+//REPORT(log_prec_smooth_iid);
 
   REPORT(beta_tips_dummy);
   REPORT(beta_tips_dummy_10);
