@@ -5,7 +5,7 @@ Type dunif(const Type x,
                            const Type a,
                            const Type b,
                            int give_log = 0) {
-  
+
   if(x < a) return 0;
   if(x > b) return 0;
   Type ans = 10/(b-a);
@@ -30,7 +30,6 @@ Type objective_function<Type>::operator() ()
   // DATA_SPARSE_MATRIX(M_aggregated_obs);
 
   DATA_MATRIX(X_tips_dummy);
-DATA_MATRIX(X_tips_dummy_10);
   DATA_MATRIX(X_tips_dummy_10);
   DATA_MATRIX(X_tips_dummy_9_11);
 
@@ -97,18 +96,16 @@ DATA_MATRIX(X_tips_dummy_10);
   ///////////////////
 
   PARAMETER_VECTOR(beta_tips_dummy);
-PARAMETER_VECTOR(beta_tips_dummy_10);
   PARAMETER(log_prec_rw_tips);
   PARAMETER_VECTOR(u_tips);
 
   // nll -= dnorm(beta_tips_dummy, Type(0), Type(sqrt(1/0.001)), true).sum();
-nll -= dnorm(beta_tips_dummy_10, Type(0), Type(sqrt(1/0.001)), true).sum();
   nll -= dnorm(beta_tips_dummy, Type(0.05), Type(0.1), true).sum();
   // nll -= dnorm(beta_tips_dummy, Type(0.13), Type(5.899), true).sum();
 
   PARAMETER_VECTOR(beta_tips_dummy_10);
   nll -= dnorm(beta_tips_dummy_10, Type(0.05), Type(0.1), true).sum();
-  
+
   // PARAMETER_VECTOR(beta_tips_dummy_9_11);
   // nll -= dnorm(beta_tips_dummy_9_11, Type(-0.05), Type(0.1), true).sum();
 
@@ -392,7 +389,7 @@ nll -= dnorm(beta_tips_dummy_10, Type(0), Type(sqrt(1/0.001)), true).sum();
   // DATA_MATRIX(X_spike_2000);
   // DATA_MATRIX(X_spike_1999);
   // DATA_MATRIX(X_spike_2001);
-  // 
+  //
   // nll -= dnorm(beta_spike_2000, Type(0), Type(2.5), true).sum();
   // nll -= dnorm(beta_spike_1999, Type(0), Type(2.5), true).sum();
   // nll -= dnorm(beta_spike_2001, Type(0), Type(2.5), true).sum();
@@ -407,9 +404,9 @@ nll -= dnorm(beta_tips_dummy_10, Type(0), Type(sqrt(1/0.001)), true).sum();
   vector<Type> births_full(A_full_obs * births);
   vector<Type> pop_full(A_full_obs * pop);
   vector<Type> lambda_out(births_full/pop_full);
-  
+
   vector<Type> tfr_out(A_tfr_out * lambda_out);
-  
+
   // nll -= dunif(tfr_out, Type(0), Type(10), true).sum();
 
   vector<Type> u_smooth_lh(Z_smooth_iid * u_smooth_iid * sqrt(1/prec_smooth_iid));
