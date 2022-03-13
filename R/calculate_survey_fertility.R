@@ -380,12 +380,37 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
 
   dat <- map_ir_to_areas(ir, cluster_list)
 
-  cluster_list_admin1 <- clusters %>%
-    left_join(areas_wide %>% st_drop_geometry, by=c("geoloc_area_id" = "area_id")) %>%
-    rename(area_id = area_id1) %>%
-    select(survey_id, cluster_id, area_id) %>%
+  cluster_level <- clusters %>%
+    filter(!is.na(geoloc_area_id)) %>%
+    separate(geoloc_area_id, into=c(NA, "area_level", NA), sep=c(4,5), remove=FALSE, convert=TRUE) %>%
+    mutate(area_level = ifelse(geoloc_area_id == iso3, 0, area_level)) %>%
+    group_by(area_level) %>%
+    group_split()
+
+  get_admin1_clusters <- function(cluster_level) {
+    lvl <- unique(cluster_level$area_level)
+
+    if(lvl > 1) {
+      cluster_level %>%
+        left_join(areas_wide %>%
+                    st_drop_geometry() %>%
+                    select(area_id1, paste0("area_id", lvl)) %>%
+                    distinct(),
+                  by=c("geoloc_area_id" = paste0("area_id", lvl))) %>%
+        rename(area_id = area_id1) %>%
+        select(survey_id, cluster_id, area_id)
+    } else {
+      cluster_level %>%
+        rename(area_id = geoloc_area_id) %>%
+        select(survey_id, cluster_id, area_id)
+    }
+  }
+
+  cluster_list_admin1 <- lapply(cluster_level, get_admin1_clusters) %>%
+    bind_rows() %>%
+    ungroup() %>%
     group_by(survey_id) %>%
-    group_split
+    group_split()
 
   names(cluster_list_admin1) <- surveys$survey_id
 
