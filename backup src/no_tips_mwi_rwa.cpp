@@ -109,8 +109,8 @@ Type objective_function<Type>::operator() ()
   // PARAMETER_VECTOR(beta_tips_dummy_9_11);
   // nll -= dnorm(beta_tips_dummy_9_11, Type(-0.05), Type(0.1), true).sum();
 
-  nll -= dlgamma(log_prec_rw_tips, Type(1), Type(20000), true);
-  // nll -= dlgamma(log_prec_rw_tips, Type(31), Type(1/3.922), true);
+  // nll -= dlgamma(log_prec_rw_tips, Type(1), Type(20000), true);
+  nll -= dnorm(log_prec_rw_tips, Type(6), Type(0.5), true);
 
   Type prec_rw_tips = exp(log_prec_rw_tips);
   nll -= dgamma(prec_rw_tips, Type(1), Type(2000), true);
@@ -418,7 +418,6 @@ Type objective_function<Type>::operator() ()
   vector<Type> mu_obs_pred_dhs(X_extract_dhs * (M_full_obs * log(lambda_out))
                                 + X_extract_dhs * tips_lh
                                 + X_tips_dummy * beta_tips_dummy
-+ X_tips_dummy_10 * beta_tips_dummy_10          // TIPS fixed effect
                                 + X_tips_dummy_10 * beta_tips_dummy_10          // TIPS fixed effect
                                 // + X_tips_dummy_9_11 * beta_tips_dummy_9_11          // TIPS fixed effect
                                 // + X_extract_dhs * spike_1999_lh
