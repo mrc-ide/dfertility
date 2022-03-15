@@ -1,7 +1,7 @@
 Package: dfertility
 Type: Package
 Title: District level estimation of age-specific fertility
-Version: 0.1.34
+Version: 0.1.35
 Authors@R: 
     person(given = "Oli",
            family = "Stevens",
