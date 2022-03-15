@@ -137,14 +137,14 @@ Type objective_function<Type>::operator() ()
 
   PARAMETER_ARRAY(zeta1);
   PARAMETER(log_prec_zeta1);
-  PARAMETER(logit_zeta1_phi_tips);
+  PARAMETER(lag_logit_zeta1_phi_tips);
 
-  Type prec_zeta1 = exp(log_prec_zeta1);
-  nll -= dgamma(log_prec_zeta1, Type(1), Type(2000), true);
+  // Type prec_zeta1 = exp(log_prec_zeta1);
+  Type prec_zeta1 = Type(5);
+  // nll -= dgamma(log_prec_zeta1, Type(1), Type(2000), true);
 
-  Type zeta1_phi_tips(exp(logit_zeta1_phi_tips)/(1+exp(logit_zeta1_phi_tips)));
-  nll -= log(zeta1_phi_tips) +  log(1 - zeta1_phi_tips); // Jacobian adjustment for inverse logit'ing the parameter...
-  nll -= dnorm(zeta1_phi_tips, Type(0), Type(1.5), true);
+  nll -= dnorm(lag_logit_zeta1_phi_tips, Type(0), Type(sqrt(1/0.15)), true);
+  Type zeta1_phi_tips = 2*exp(lag_logit_zeta1_phi_tips)/(1+exp(lag_logit_zeta1_phi_tips))-1;
 
   nll += SEPARABLE(AR1(Type(zeta1_phi_tips)), GMRF(R_survey))(zeta1);
 
