@@ -1,4 +1,6 @@
 #include <TMB.hpp>                                // Links in the TMB libraries
+#include <Eigen/Dense>
+
 
 template<class Type>
 Type dunif(const Type x,
@@ -136,20 +138,25 @@ Type objective_function<Type>::operator() ()
   /////////////////
 
   PARAMETER_ARRAY(zeta1);
+  DATA_SPARSE_MATRIX(R_tips_iid);
   // PARAMETER(log_prec_zeta1);
-  PARAMETER(lag_logit_zeta1_phi_tips);
+  // PARAMETER(lag_logit_zeta1_phi_tips);
 
   // Type prec_zeta1 = exp(log_prec_zeta1);
   Type prec_zeta1 = Type(5);
   // nll -= dgamma(log_prec_zeta1, Type(1), Type(2000), true);
 
-  nll -= dnorm(lag_logit_zeta1_phi_tips, Type(0), Type(sqrt(1/0.15)), true);
-  Type zeta1_phi_tips = 2*exp(lag_logit_zeta1_phi_tips)/(1+exp(lag_logit_zeta1_phi_tips))-1;
+  // nll -= dnorm(lag_logit_zeta1_phi_tips, Type(0), Type(sqrt(1/0.15)), true);
+  // Type zeta1_phi_tips = 2*exp(lag_logit_zeta1_phi_tips)/(1+exp(lag_logit_zeta1_phi_tips))-1;
 
-  nll += SEPARABLE(AR1(Type(zeta1_phi_tips)), GMRF(R_survey))(zeta1);
+  // nll += SEPARABLE(AR1(Type(zeta1_phi_tips)), GMRF(R_survey))(zeta1);
+  nll += SEPARABLE(GMRF(R_tips_iid), GMRF(R_survey))(zeta1);
 
   for (int i = 0; i < zeta1.cols(); i++) {
     nll -= dnorm(zeta1.col(i).sum(), Type(0), Type(0.01) * zeta1.col(i).size(), true);}
+  
+  for (int i = 0; i < zeta1.transpose().cols(); i++) {
+    nll -= dnorm(zeta1.transpose().col(i).sum(), Type(0), Type(0.01) * zeta1.transpose().col(i).size(), true);}
 
   vector<Type> zeta1_v(zeta1);
 
