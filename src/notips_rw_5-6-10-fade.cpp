@@ -136,7 +136,7 @@ Type objective_function<Type>::operator() ()
   /////////////////
 
   PARAMETER_ARRAY(zeta1);
-  PARAMETER(log_prec_zeta1);
+  // PARAMETER(log_prec_zeta1);
   PARAMETER(lag_logit_zeta1_phi_tips);
 
   // Type prec_zeta1 = exp(log_prec_zeta1);
