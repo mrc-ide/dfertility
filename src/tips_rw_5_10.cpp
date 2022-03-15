@@ -1,17 +1,17 @@
 #include <TMB.hpp>                                // Links in the TMB libraries
 
-template<class Type>
-Type dunif(const Type x,
-                           const Type a,
-                           const Type b,
-                           int give_log = 0) {
-
-  if(x < a) return 0;
-  if(x > b) return 0;
-  Type ans = 10/(b-a);
-  if(give_log) return log(ans); else return ans;
-}
-VECTORIZE4_ttti(dunif)
+// template<class Type>
+// Type dunif(const Type x,
+//                            const Type a,
+//                            const Type b,
+//                            int give_log = 0) {
+//
+//   if(x < a) return 0;
+//   if(x > b) return 0;
+//   Type ans = 10/(b-a);
+//   if(give_log) return log(ans); else return ans;
+// }
+// VECTORIZE4_ttti(dunif)
 
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -127,7 +127,7 @@ Type objective_function<Type>::operator() ()
   //
   nll -= Type(-0.5) * (u_tips * (R_tips * u_tips)).sum();
   nll -= dnorm(u_tips.sum(), Type(0), Type(0.01) * u_tips.size(), true);
-  
+
   vector<Type> u_tips_constr = u_tips - u_tips[3];
 
   /////////////////
