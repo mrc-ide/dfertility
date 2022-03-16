@@ -378,6 +378,19 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
   ir <- get_fertility_surveys(surveys)
   names(ir) <- names(cluster_list)
 
+  if(iso3 == 'ETH') {
+
+    adjust_eth_months <- function(ir) {
+
+      col_positions <- grep("v011|v008|^b3\\_[0-9]*", colnames(ir[[1]]))
+      ir <- ir %>%
+        mutate(across(col_positions, ~{.x+92}))
+    }
+
+    ir <- lapply(ir, adjust_eth_months)
+
+  }
+
   dat <- map_ir_to_areas(ir, cluster_list)
 
   cluster_level <- clusters %>%
