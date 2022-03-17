@@ -1,2 +1,4 @@
 exportPattern("^[[:alpha:]]+")
-useDynLib(dfertility, .registration = TRUE)
+useDynLib(model6, .registration = TRUE)
+useDynLib(model6_eth, .registration = TRUE)
+useDynLib(model6_mwi_rwa, .registration = TRUE)
