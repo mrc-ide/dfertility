@@ -1,19 +1,6 @@
 #include <TMB.hpp>                                // Links in the TMB libraries
 
 template<class Type>
-Type dunif(const Type x,
-                           const Type a,
-                           const Type b,
-                           int give_log = 0) {
-
-  if(x < a) return 0;
-  if(x > b) return 0;
-  Type ans = 10/(b-a);
-  if(give_log) return log(ans); else return ans;
-}
-VECTORIZE4_ttti(dunif)
-
-template<class Type>
 Type objective_function<Type>::operator() ()
 
 {
@@ -27,19 +14,13 @@ Type objective_function<Type>::operator() ()
 
   DATA_SPARSE_MATRIX(M_naomi_obs);
   DATA_SPARSE_MATRIX(M_full_obs);
-  // DATA_SPARSE_MATRIX(M_aggregated_obs);
 
   DATA_MATRIX(X_tips_dummy);
-  // DATA_MATRIX(X_tips_dummy_10);
-  DATA_MATRIX(X_tips_dummy_9_11);
-  // DATA_MATRIX(X_tips_dummy_0);
+  // DATA_MATRIX(X_tips_dummy_9_11);
   DATA_MATRIX(X_tips_dummy_5);
-  // DATA_MATRIX(X_tips_dummy_6);
   DATA_SPARSE_MATRIX(X_tips_fe)
 
   DATA_SPARSE_MATRIX(Z_tips);
-  // DATA_SPARSE_MATRIX(Z_tips_dhs);
-  // DATA_SPARSE_MATRIX(Z_tips_ais);
   DATA_SPARSE_MATRIX(R_tips);
   DATA_SPARSE_MATRIX(Z_zeta2);
 
@@ -88,7 +69,6 @@ Type objective_function<Type>::operator() ()
 
   DATA_VECTOR(pop);
   DATA_INTEGER(mics_toggle);
-  // DATA_INTEGER(out_toggle);
 
   DATA_SPARSE_MATRIX(A_full_obs);
   DATA_SPARSE_MATRIX(A_tfr_out);
@@ -108,17 +88,8 @@ Type objective_function<Type>::operator() ()
   // nll -= dnorm(beta_tips_dummy, Type(0.05), Type(0.1), true).sum();
   // nll -= dnorm(beta_tips_dummy, Type(0.13), Type(5.899), true).sum();
 
-  // PARAMETER_VECTOR(beta_tips_dummy_0);
-  // nll -= dnorm(beta_tips_dummy_0, Type(0.05), Type(0.1), true).sum();
-
   PARAMETER_VECTOR(beta_tips_dummy_5);
   nll -= dnorm(beta_tips_dummy_5, Type(-0.05), Type(0.1), true).sum();
-
-  // PARAMETER_VECTOR(beta_tips_dummy_6);
-  // nll -= dnorm(beta_tips_dummy_6, Type(0.05), Type(0.1), true).sum();
-  //
-  // PARAMETER_VECTOR(beta_tips_dummy_10);
-  // nll -= dnorm(beta_tips_dummy_10, Type(0.05), Type(0.1), true).sum();
 
   PARAMETER_VECTOR(beta_tips_fe);
   nll -= dnorm(beta_tips_fe, Type(0.05), Type(0.1), true).sum();
@@ -141,8 +112,6 @@ Type objective_function<Type>::operator() ()
     nll -= dnorm(zeta2.transpose().col(i).sum(), Type(0), Type(0.01) * zeta2.transpose().col(i).size(), true);}
 
   vector<Type> zeta2_v(zeta2);
-
-  // nll -= dnorm(log_prec_rw_tips, Type(7), Type(0.2), true);
 
   Type prec_rw_tips = exp(log_prec_rw_tips);
   nll -= dgamma(prec_rw_tips, Type(1), Type(2000), true);
@@ -421,14 +390,6 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(beta_spike_1999);
   PARAMETER_VECTOR(beta_spike_2001);
 
-  // DATA_MATRIX(X_spike_2000_dhs);
-  // DATA_MATRIX(X_spike_1999_dhs);
-  // DATA_MATRIX(X_spike_2001_dhs);
-
-  // DATA_MATRIX(X_spike_2000_ais);
-  // DATA_MATRIX(X_spike_1999_ais);
-  // DATA_MATRIX(X_spike_2001_ais);
-
   DATA_MATRIX(X_spike_2000);
   DATA_MATRIX(X_spike_1999);
   DATA_MATRIX(X_spike_2001);
@@ -464,13 +425,9 @@ Type objective_function<Type>::operator() ()
   vector<Type> mu_obs_pred_dhs(X_extract_dhs * (M_full_obs * log(lambda_out))
                                 + X_extract_dhs * tips_lh
                                 // + X_tips_dummy * beta_tips_dummy          // TIPS fixed effect
-                                // + X_tips_dummy_10 * beta_tips_dummy_10          // TIPS fixed effect
-                                // + X_extract_dhs * beta_tips_dummy_0          // TIPS fixed effect
                                 + X_tips_dummy_5 * beta_tips_dummy_5          // TIPS fixed effect
                                 + X_extract_dhs * tips_fe_lh
-                                // + X_tips_dummy_6 * beta_tips_dummy_6         // TIPS fixed effect
                                 + X_extract_dhs * zeta2_lh
-                                // + X_tips_dummy_9_11 * beta_tips_dummy_9_11          // TIPS fixed effect
                                 + X_extract_dhs * spike_1999_lh
                                 + X_extract_dhs * spike_2000_lh
                                 + X_extract_dhs * spike_2001_lh
@@ -518,10 +475,6 @@ Type objective_function<Type>::operator() ()
 
     DATA_VECTOR(log_offset_mics);
     DATA_VECTOR(births_obs_mics);
-
-    // DATA_MATRIX(X_spike_2000_mics);
-    // DATA_MATRIX(X_spike_1999_mics);
-    // DATA_MATRIX(X_spike_2001_mics);
 
     // PARAMETER_VECTOR(u_tips_mics);
 
