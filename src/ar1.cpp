@@ -15,6 +15,7 @@ Type objective_function<Type>::operator() ()
 
   DATA_SPARSE_MATRIX(M_naomi_obs);
   DATA_SPARSE_MATRIX(M_full_obs);
+  
 
   DATA_MATRIX(X_tips_dummy);
   // DATA_MATRIX(X_tips_dummy_9_11);
