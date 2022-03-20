@@ -68,10 +68,15 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(log_offset_phia);
   DATA_VECTOR(births_obs_phia);
 
-  DATA_VECTOR(include_dhs_obs);
-  DATA_VECTOR(include_ais_obs);
-  DATA_VECTOR(include_phia_obs);
-  DATA_VECTOR(include_mics_obs);
+  DATA_IVECTOR(include_dhs_obs);
+  DATA_IVECTOR(include_ais_obs);
+  DATA_IVECTOR(include_phia_obs);
+  DATA_IVECTOR(include_mics_obs);
+
+  DATA_IVECTOR(exclude_dhs_obs);
+  DATA_IVECTOR(exclude_ais_obs);
+  DATA_IVECTOR(exclude_phia_obs);
+  DATA_IVECTOR(exclude_mics_obs);
 
 
   DATA_VECTOR(pop);
@@ -585,7 +590,7 @@ vector<Type> log_rate_exclude_dhs = log_rate_pred_dhs(exclude_dhs_obs);
   REPORT(phi_arima_period);
 //REPORT(log_prec_smooth_iid);
 
-  REPORT(beta_tips_dummy);
+  // REPORT(beta_tips_dummy);
   // // REPORT(beta_urban_dummy);
 
   // REPORT(u_period);
