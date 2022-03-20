@@ -3,7 +3,7 @@
 
 template<class Type>
 Type objective_function<Type>::operator() ()
-  
+
 {
 
   using namespace density;
@@ -73,6 +73,10 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(include_phia_obs);
   DATA_IVECTOR(include_mics_obs);
 
+  DATA_IVECTOR(exclude_dhs_obs);
+  DATA_IVECTOR(exclude_ais_obs);
+  DATA_IVECTOR(exclude_phia_obs);
+  DATA_IVECTOR(exclude_mics_obs);
 
   DATA_VECTOR(pop);
   DATA_INTEGER(mics_toggle);
@@ -143,24 +147,25 @@ Type objective_function<Type>::operator() ()
   PARAMETER(log_prec_spatial);
 
   // nll -= dlgamma(log_prec_spatial, Type(1), Type(20000), true);
-  
+
   // Type log_prec_spatial = 3.16;
   Type prec_spatial = exp(log_prec_spatial);
   nll -= dgamma(prec_spatial, Type(1), Type(2000), true);
 
   nll -= Type(-0.5) * (u_spatial_str * (R_spatial * u_spatial_str)).sum();
-  
+
   nll -= dnorm(u_spatial_str.sum(), Type(0), Type(0.01) * u_spatial_str.size(), 1);
 
   ///////////////////
 
   // nll -= dlgamma(log_prec_country, Type(1), Type(20000), true);
-  // Type prec_country = exp(log_prec_country); 
-  // 
+  // Type prec_country = exp(log_prec_country);
+  //
   // nll -= Type(-0.5) * (u_country * (R_country * u_country)).sum();
 
 
   ///////////////////
+
   DATA_SPARSE_MATRIX(Z_age);
   DATA_SPARSE_MATRIX(R_age);
   PARAMETER(log_prec_rw_age);
@@ -185,7 +190,7 @@ Type objective_function<Type>::operator() ()
 
   // nll -= dnorm(lag_logit_omega1_phi_age, Type(0), Type(sqrt(1/0.15)), true);
   // Type omega1_phi_age = 2*exp(lag_logit_omega1_phi_age)/(1+exp(lag_logit_omega1_phi_age))-1;
-  
+
   // nll += SEPARABLE(AR1(Type(omega1_phi_age)), GMRF(R_country))(omega1);
   // vector<Type> omega1_v(omega1);
 
@@ -194,9 +199,9 @@ Type objective_function<Type>::operator() ()
   DATA_SPARSE_MATRIX(Z_period);
   DATA_SPARSE_MATRIX(R_period);
   PARAMETER(log_prec_rw_period);
-  PARAMETER_VECTOR(u_period); 
- 
- 
+  PARAMETER_VECTOR(u_period);
+
+
   // nll -= dnorm(log_prec_rw_period, Type(5.93204716), Type(0.80520811), true);
   // nll -= dlgamma(log_prec_rw_period, Type(1), Type(20000), true);
   // Type log_prec_rw_period = 4.11;
@@ -205,22 +210,22 @@ Type objective_function<Type>::operator() ()
 
 
   // // RW
-  // nll -= Type(-0.5) * (u_period * (R_period * u_period)).sum();
-  // nll -= dnorm(u_period.sum(), Type(0), Type(0.01) * u_period.size(), true);
+  nll -= Type(-0.5) * (u_period * (R_period * u_period)).sum();
+  nll -= dnorm(u_period.sum(), Type(0), Type(0.01) * u_period.size(), true);
 
   // // AR1
-  PARAMETER(lag_logit_phi_period);
+  // PARAMETER(lag_logit_phi_period);
 
-  nll -= dnorm(lag_logit_phi_period, Type(0), Type(sqrt(1/0.15)), true);
-  Type phi_period = 2*exp(lag_logit_phi_period)/(1+exp(lag_logit_phi_period))-1;
-  // 
+  // nll -= dnorm(lag_logit_phi_period, Type(0), Type(sqrt(1/0.15)), true);
+  // Type phi_period = 2*exp(lag_logit_phi_period)/(1+exp(lag_logit_phi_period))-1;
+  //
   // Type phi_period(exp(logit_phi_period)/(1+exp(logit_phi_period)));
   // nll -= log(phi_period) +  log(1 - phi_period); // Jacobian adjustment for inverse logit'ing the parameter...
   // nll -= dbeta(phi_period, Type(0.5), Type(0.5), true);
-  
+
   // Type phi_period = 0.99;
-  
-  nll += AR1(Type(phi_period))(u_period);
+
+  // nll += AR1(Type(phi_period))(u_period);
 
   // ARIMA(1,1,0) with trend
   DATA_SPARSE_MATRIX(X_period);
@@ -231,15 +236,15 @@ Type objective_function<Type>::operator() ()
 
   // nll -= dnorm(lag_logit_phi_arima_period, Type(0), Type(sqrt(1/0.15)), true);
   // Type phi_arima_period = 2*exp(lag_logit_phi_arima_period)/(1+exp(lag_logit_phi_arima_period))-1;
-  // 
+  //
   // int n = u_period.size();
-  // 
+  //
   // vector<Type> u_period_diff(n - 1);
-  // 
+  //
   // for (int i = 1; i < n; i++) {
   //   u_period_diff[i - 1] = u_period[i] - u_period[i - 1];
   // }
-  // 
+  //
   // nll += AR1(Type(phi_arima_period))(u_period_diff);
 
   ///
@@ -249,7 +254,7 @@ Type objective_function<Type>::operator() ()
 
   // nll -= dnorm(lag_logit_omega2_phi_period, Type(0), Type(sqrt(1/0.15)), true);
   // Type omega2_phi_period = 2*exp(lag_logit_omega2_phi_period)/(1+exp(lag_logit_omega2_phi_period))-1;
-  
+
   // nll += SEPARABLE(AR1(Type(omega2_phi_period)), GMRF(R_country))(omega2);
   // vector<Type> omega2_v(omega2);
 
@@ -267,7 +272,7 @@ Type objective_function<Type>::operator() ()
   // nll -= dnorm(lag_logit_eta1_phi_period, Type(4.71453548), Type(0.31483987), true);
 
   // nll -= dlgamma(log_prec_eta1, Type(1), Type(20000), true);
-  
+
 
   // nll -= dnorm(lag_logit_eta1_phi_age, Type(0), Type(sqrt(1/0.15)), true);
   // Type eta1_phi_age = 2*exp(lag_logit_eta1_phi_age)/(1+exp(lag_logit_eta1_phi_age))-1;
@@ -291,24 +296,24 @@ Type objective_function<Type>::operator() ()
 
   ///////////////////
    // ETA-2 - Space x time interaction
-// 
+//
   PARAMETER_ARRAY(eta2);
   PARAMETER(log_prec_eta2);
   PARAMETER(logit_eta2_phi_period);
-  
-  
+
+
 
   // DATA_SPARSE_MATRIX(R_period_iid);
   // nll -= dnorm(log_prec_eta2, Type(6.92577668), Type(0.23404592), true);
   // nll -= dnorm(lag_logit_eta2_phi_period, Type(-1.85559582), Type(0.37270676), true);
-  
+
   // nll -= dlgamma(log_prec_eta2, Type(1), Type(20000), true);
-  
+
 
   // nll -= dnorm(lag_logit_eta2_phi_period, Type(0), Type(sqrt(1/0.15)), true);
   // Type eta2_phi_period = 2*exp(lag_logit_eta2_phi_period)/(1+exp(lag_logit_eta2_phi_period))-1;
 
-  // Type log_prec_eta2 = 8;  
+  // Type log_prec_eta2 = 8;
   Type prec_eta2 = exp(log_prec_eta2);
   nll -= dgamma(prec_eta2, Type(1), Type(2000), true);
 
@@ -337,10 +342,10 @@ Type objective_function<Type>::operator() ()
   // nll -= dnorm(log_prec_eta3, Type(2.47668668), Type(0.06081623), true);
   // nll -= dnorm(lag_logit_eta3_phi_age, Type(3.66116349), Type(0.09653723), true);
   // nll -= dlgamma(log_prec_eta3, Type(1), Type(20000), true);
-  
+
   // nll -= dnorm(lag_logit_eta3_phi_age, Type(0), Type(sqrt(1/0.15)), true);
   // Type eta3_phi_age = 2*exp(lag_logit_eta3_phi_age)/(1+exp(lag_logit_eta3_phi_age))-1;
-  
+
   Type prec_eta3 = exp(log_prec_eta3);
   nll -= dgamma(prec_eta3, Type(1), Type(2000), true);
 
@@ -378,7 +383,7 @@ Type objective_function<Type>::operator() ()
                      + Z_age * u_age * sqrt(1/prec_rw_age)
                      + Z_period * u_period * sqrt(1/prec_rw_period)
                      // + X_period * beta_period
-                     // + Z_spatial * spatial                     
+                     // + Z_spatial * spatial
                      + Z_spatial * u_spatial_str * sqrt(1/prec_spatial)
                      // + X_urban_dummy * beta_urban_dummy
                      // + Z_country * u_country * sqrt(1/prec_country)
@@ -425,7 +430,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> spike_2000_lh(X_spike_2000 * beta_spike_2000);
   vector<Type> spike_2001_lh(X_spike_2001 * beta_spike_2001);
 
-  vector<Type> mu_obs_pred_dhs(X_extract_dhs * (M_full_obs * log(lambda_out))
+  vector<Type> log_rate_pred_dhs(X_extract_dhs * (M_full_obs * log(lambda_out))
                                 + X_extract_dhs * tips_lh
                                 // + X_tips_dummy * beta_tips_dummy          // TIPS fixed effect
                                 + X_tips_dummy_5 * beta_tips_dummy_5          // TIPS fixed effect
@@ -435,11 +440,9 @@ Type objective_function<Type>::operator() ()
                                 + X_extract_dhs * spike_2000_lh
                                 + X_extract_dhs * spike_2001_lh
                                 + X_extract_dhs * u_smooth_lh
-                                + log_offset_dhs
-
                 );
 
-  vector<Type> mu_obs_pred_ais(X_extract_ais * (M_full_obs * log(lambda_out))
+  vector<Type> log_rate_pred_ais(X_extract_ais * (M_full_obs * log(lambda_out))
                                 + X_extract_ais * tips_lh
                                 + X_extract_ais * spike_1999_lh
                                 + X_extract_ais * spike_2000_lh
@@ -447,60 +450,48 @@ Type objective_function<Type>::operator() ()
                                 + X_extract_ais * u_smooth_lh
                                 + X_extract_ais * tips_fe_lh
                                 + X_extract_ais * zeta2_lh
-                                + log_offset_ais
 
                 );
 
-  vector<Type> mu_obs_pred_phia(X_extract_phia * (M_full_obs * log(lambda_out))
-                                 + log_offset_phia
+  vector<Type> log_rate_pred_phia(X_extract_phia * (M_full_obs * log(lambda_out))
 
   );
 
+  vector<Type> mu_obs_pred_dhs = log_rate_pred_dhs + log_offset_dhs;
+  vector<Type> mu_obs_pred_ais = log_rate_pred_ais + log_offset_ais;
+  vector<Type> mu_obs_pred_phia = log_rate_pred_phia + log_offset_phia;
+
   // PARAMETER(log_overdispersion);
   // nll -= dnorm(log_overdispersion, Type(0), Type(2.5), true);
-  // Type overdispersion = exp(log_overdispersion); 
-  
+  // Type overdispersion = exp(log_overdispersion);
+
   // vector<Type> var_nbinom_dhs = exp(mu_obs_pred_dhs) + ((exp(mu_obs_pred_dhs)) * (exp(mu_obs_pred_dhs)) * overdispersion);
   // vector<Type> var_nbinom_ais = exp(mu_obs_pred_ais) + ((exp(mu_obs_pred_ais)) * (exp(mu_obs_pred_ais)) * overdispersion);
 
-  // nll -= dnbinom2(births_obs_dhs, exp(mu_obs_pred_dhs), var_nbinom_dhs, true).sum();  
+  // nll -= dnbinom2(births_obs_dhs, exp(mu_obs_pred_dhs), var_nbinom_dhs, true).sum();
   // nll -= dnbinom2(births_obs_ais, exp(mu_obs_pred_ais), var_nbinom_ais, true).sum();
 
   vector<Type> births_obs_dhs_trim;
   vector<Type> mu_obs_pred_dhs_trim;
-  int dhs_idx;
 
-  for (int i = 1; i < include_dhs_obs.size(); i++) {
-
-    dhs_idx = include_dhs_obs[i];
-    births_obs_dhs_trim[i] = births_obs_dhs[dhs_idx];
-    mu_obs_pred_dhs_trim[i] = mu_obs_pred_dhs[dhs_idx];
-  }
+  births_obs_dhs_trim = births_obs_dhs(include_dhs_obs);
+  mu_obs_pred_dhs_trim = mu_obs_pred_dhs(include_dhs_obs);
 
   vector<Type> births_obs_ais_trim;
   vector<Type> mu_obs_pred_ais_trim;
-  int ais_idx;
 
-  for (int i = 1; i < include_ais_obs.size(); i++) {
-    ais_idx = include_ais_obs[i];
-    births_obs_ais_trim[i] = births_obs_ais[ais_idx];
-    mu_obs_pred_ais_trim[i] = mu_obs_pred_ais[ais_idx];
-  }
+  births_obs_ais_trim = births_obs_ais(include_ais_obs);
+  mu_obs_pred_ais_trim = mu_obs_pred_ais(include_ais_obs);
 
   vector<Type> births_obs_phia_trim;
   vector<Type> mu_obs_pred_phia_trim;
-  int phia_idx;
 
-  for (int i = 1; i < include_phia_obs.size(); i++) {
-    phia_idx = include_phia_obs[i];
-    births_obs_phia_trim[i] = births_obs_phia[phia_idx];
-    mu_obs_pred_phia_trim[i] = mu_obs_pred_phia[phia_idx];
-  }
+  births_obs_phia_trim = births_obs_phia(include_phia_obs);
+  mu_obs_pred_phia_trim = mu_obs_pred_phia(include_phia_obs);
 
-
-  nll -= dpois(births_obs_dhs_trim, exp(mu_obs_pred_dhs_trim), true).sum();  
+  nll -= dpois(births_obs_dhs_trim, exp(mu_obs_pred_dhs_trim), true).sum();
   nll -= dpois(births_obs_ais_trim, exp(mu_obs_pred_ais_trim), true).sum();
-  nll -= dpois(births_obs_phia_trim, exp(mu_obs_pred_phia_trim), true).sum();  
+  nll -= dpois(births_obs_phia_trim, exp(mu_obs_pred_phia_trim), true).sum();
 
 
   if(mics_toggle) {
@@ -520,7 +511,7 @@ Type objective_function<Type>::operator() ()
 
 
 
-    vector<Type> mu_obs_pred_mics(X_extract_mics * (M_full_obs * log(lambda_out))
+    vector<Type> log_rate_pred_mics(X_extract_mics * (M_full_obs * log(lambda_out))
                                   + X_extract_mics * tips_lh
                                   + X_extract_mics * spike_1999_lh
                                   + X_extract_mics * spike_2000_lh
@@ -528,41 +519,39 @@ Type objective_function<Type>::operator() ()
                                   + X_extract_mics * u_smooth_lh
                                   + X_extract_mics * tips_fe_lh
                                   + X_extract_mics * zeta2_lh
-                                  + log_offset_mics
 
                 );
+
+    vector<Type> mu_obs_pred_mics = log_rate_pred_mics + log_offset_mics;
 
     // vector<Type> var_nbinom_mics = exp(mu_obs_pred_mics) + ((exp(mu_obs_pred_mics)) * (exp(mu_obs_pred_mics)) * overdispersion);
     // nll -= dnbinom2(births_obs_mics, exp(mu_obs_pred_mics), var_nbinom_mics, true).sum();
 
-     vector<Type> births_obs_mics_trim;
+    vector<Type> births_obs_mics_trim;
     vector<Type> mu_obs_pred_mics_trim;
-    int mics_idx;
 
-    for (int i = 1; i < include_mics_obs.size(); i++) {
-      mics_idx = include_mics_obs[i];
-      births_obs_mics_trim[i] = births_obs_mics[mics_idx];
-      mu_obs_pred_mics_trim[i] = mu_obs_pred_mics[mics_idx];
-    }
+    births_obs_mics_trim = births_obs_mics(include_mics_obs);
+    mu_obs_pred_mics_trim = mu_obs_pred_mics(include_mics_obs);
 
-    nll -= dpois(births_obs_mics_trim, exp(mu_obs_pred_mics_trim), true).sum(); 
+    nll -= dpois(births_obs_mics_trim, exp(mu_obs_pred_mics_trim), true).sum();
 
-    REPORT(mu_obs_pred_mics);
+    vector<Type> log_rate_exclude_mics = log_rate_pred_mics(exclude_mics_obs);
+
+    REPORT(log_rate_exclude_mics);
 
   }
 
+  vector<Type> log_rate_exclude_dhs = log_rate_pred_dhs(exclude_dhs_obs);
+  vector<Type> log_rate_exclude_ais = log_rate_pred_ais(exclude_ais_obs);
+  vector<Type> log_rate_exclude_phia = log_rate_pred_phia(exclude_phia_obs);
 
-
-
-
-  
   REPORT(tfr_out);
   REPORT(lambda_out);
-  // REPORT(tips_fe);
-  // REPORT(beta_spike_1999);
-  // REPORT(beta_spike_2000);
-  // REPORT(beta_spike_2001);
-  // REPORT(u_tips);
+
+  REPORT(log_rate_exclude_dhs);
+  REPORT(log_rate_exclude_ais);
+  REPORT(log_rate_exclude_phia);
+
   // REPORT(u_period_lh);
   // REPORT(lambda);
 
@@ -572,10 +561,10 @@ Type objective_function<Type>::operator() ()
   // REPORT(log_prec_eta1);
   // REPORT(eta1_phi_age);
   // REPORT(eta1_phi_period);
-  // 
+  //
   // REPORT(log_prec_eta2);
   // REPORT(eta2_phi_period);
-  // // 
+  // //
   // REPORT(log_prec_eta3);
   // REPORT(eta3_phi_age);
 
@@ -590,10 +579,11 @@ Type objective_function<Type>::operator() ()
   // REPORT(log_prec_rw_age);
   // REPORT(log_prec_rw_period);
   // REPORT(log_prec_rw_tips);
-  // 
+  //
   // REPORT(beta_period);
   // REPORT(phi_period);
   // REPORT(phi_arima_period);
+//REPORT(log_prec_smooth_iid);
 
   // REPORT(beta_tips_dummy);
   // // REPORT(beta_urban_dummy);
@@ -609,11 +599,11 @@ Type objective_function<Type>::operator() ()
   // REPORT(beta_0);
 
   // Posterior predictive checks
-  REPORT(mu_obs_pred_ais);
-  REPORT(mu_obs_pred_dhs);
-  REPORT(mu_obs_pred_phia);
+  // REPORT(mu_obs_pred_ais);
+  // REPORT(mu_obs_pred_dhs);
+  // REPORT(mu_obs_pred_phia);
 
 
   return nll;
-  
+
 }
