@@ -431,7 +431,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> spike_2000_lh(X_spike_2000 * beta_spike_2000);
   vector<Type> spike_2001_lh(X_spike_2001 * beta_spike_2001);
 
-  vector<Type> mu_obs_pred_dhs(X_extract_dhs * (M_full_obs * log(lambda_out))
+vector<Type> log_rate_pred_dhs(X_extract_dhs * (M_full_obs * log(lambda_out))
                                 + X_extract_dhs * tips_lh
                                 // + X_tips_dummy * beta_tips_dummy          // TIPS fixed effect
                                 + X_tips_dummy_5 * beta_tips_dummy_5          // TIPS fixed effect
@@ -441,11 +441,9 @@ Type objective_function<Type>::operator() ()
                                 + X_extract_dhs * spike_2000_lh
                                 + X_extract_dhs * spike_2001_lh
                                 + X_extract_dhs * u_smooth_lh
-                                + log_offset_dhs
-
                 );
 
-  vector<Type> mu_obs_pred_ais(X_extract_ais * (M_full_obs * log(lambda_out))
+  vector<Type> log_rate_pred_ais(X_extract_ais * (M_full_obs * log(lambda_out))
                                 + X_extract_ais * tips_lh
                                 + X_extract_ais * spike_1999_lh
                                 + X_extract_ais * spike_2000_lh
@@ -453,14 +451,16 @@ Type objective_function<Type>::operator() ()
                                 + X_extract_ais * u_smooth_lh
                                 + X_extract_ais * tips_fe_lh
                                 + X_extract_ais * zeta2_lh
-                                + log_offset_ais
 
                 );
 
-  vector<Type> mu_obs_pred_phia(X_extract_phia * (M_full_obs * log(lambda_out))
-                                 + log_offset_phia
+  vector<Type> log_rate_pred_phia(X_extract_phia * (M_full_obs * log(lambda_out))
 
   );
+
+  vector<Type> mu_obs_pred_dhs = log_rate_pred_dhs + log_offset_dhs;
+  vector<Type> mu_obs_pred_ais = log_rate_pred_ais + log_offset_ais;
+  vector<Type> mu_obs_pred_phia = log_rate_pred_phia + log_offset_phia;
 
   // PARAMETER(log_overdispersion);
   // nll -= dnorm(log_overdispersion, Type(0), Type(2.5), true);
@@ -513,7 +513,7 @@ Type objective_function<Type>::operator() ()
 
 
 
-    vector<Type> mu_obs_pred_mics(X_extract_mics * (M_full_obs * log(lambda_out))
+    vector<Type> log_rate_pred_mics(X_extract_mics * (M_full_obs * log(lambda_out))
                                   + X_extract_mics * tips_lh
                                   + X_extract_mics * spike_1999_lh
                                   + X_extract_mics * spike_2000_lh
@@ -521,9 +521,10 @@ Type objective_function<Type>::operator() ()
                                   + X_extract_mics * u_smooth_lh
                                   + X_extract_mics * tips_fe_lh
                                   + X_extract_mics * zeta2_lh
-                                  + log_offset_mics
 
                 );
+
+    vector<Type> mu_obs_pred_mics = log_rate_pred_mics + log_offset_mics;
 
     // vector<Type> var_nbinom_mics = exp(mu_obs_pred_mics) + ((exp(mu_obs_pred_mics)) * (exp(mu_obs_pred_mics)) * overdispersion);
     // nll -= dnbinom2(births_obs_mics, exp(mu_obs_pred_mics), var_nbinom_mics, true).sum();
