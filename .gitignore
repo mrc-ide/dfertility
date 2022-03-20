@@ -7,3 +7,4 @@
 *.Rproj
 *.o
 *.so
+.DS_Store
