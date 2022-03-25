@@ -138,11 +138,11 @@ Type objective_function<Type>::operator() ()
 
   nll += SEPARABLE(GMRF(R_zeta2), GMRF(R_survey))(zeta2);
 
-  for (int i = 0; i < zeta2.cols(); i++) {
-    nll -= dnorm(zeta2.col(i).sum(), Type(0), Type(0.01) * zeta2.col(i).size(), true);}
-
-  for (int i = 0; i < zeta2.transpose().cols(); i++) {
-    nll -= dnorm(zeta2.transpose().col(i).sum(), Type(0), Type(0.01) * zeta2.transpose().col(i).size(), true);}
+  // for (int i = 0; i < zeta2.cols(); i++) {
+  //   nll -= dnorm(zeta2.col(i).sum(), Type(0), Type(0.01) * zeta2.col(i).size(), true);}
+  // 
+  // for (int i = 0; i < zeta2.transpose().cols(); i++) {
+  //   nll -= dnorm(zeta2.transpose().col(i).sum(), Type(0), Type(0.01) * zeta2.transpose().col(i).size(), true);}
 
   vector<Type> zeta2_v(zeta2);
 
@@ -468,7 +468,6 @@ Type objective_function<Type>::operator() ()
   vector<Type> spike_1999_lh(X_spike_1999 * beta_spike_1999);
   vector<Type> spike_2000_lh(X_spike_2000 * beta_spike_2000);
   vector<Type> spike_2001_lh(X_spike_2001 * beta_spike_2001);
-  vector<Type> spike_2010_lh(X_spike_2010 * beta_spike_2010);
 
   vector<Type> mu_obs_pred_dhs(X_extract_dhs * (M_full_obs * log(lambda_out))
                                 + X_extract_dhs * tips_lh
