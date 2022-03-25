@@ -1,4 +1,4 @@
-all: ar1_trend.so ar1.so arima_trend.so arima.so rw.so rw1_trend.so
+all: ar1_trend.so ar1.so arima_trend.so arima.so rw.so rw1_trend.so model7.cpp
 	# Comment here preserves the prior tab
 ar1_trend.so: ar1_trend.cpp
 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('ar1_trend.cpp', '-O1 -g',DLLFLAGS='')"
@@ -12,6 +12,8 @@ rw.so: rw.cpp
 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('rw.cpp', '-O1 -g',DLLFLAGS='')"
 rw1_trend.so: rw1_trend.cpp
 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('rw1_trend.cpp', '-O1 -g',DLLFLAGS='')"
+model7.so: model7.cpp
+	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('model7.cpp', '-O1 -g',DLLFLAGS='')"
 
 
 clean:
