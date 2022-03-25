@@ -17,7 +17,10 @@ get_fertility_surveys <- function(surveys) {
              survtype = surveys$SurveyType)
     }, ., group_split(surveys, SurveyId))
 
-  ir
+  out <- list()
+  out$ir <- ir
+  out$nrow_ir <- lapply(ir, nrow)
+  out
 
 
 }
@@ -376,7 +379,8 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
   names(cluster_list) <- surveys$survey_id
 
   ir <- get_fertility_surveys(surveys)
-  names(ir) <- names(cluster_list)
+  names(ir$ir) <- names(cluster_list)
+  names(ir$nrow_ir) <- names(cluster_list)
 
   if(iso3 == 'ETH') {
 
@@ -387,11 +391,11 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
         mutate(across(col_positions, ~{.x+92}))
     }
 
-    ir <- lapply(ir, adjust_eth_months)
+    ir$ir <- lapply(ir$ir, adjust_eth_months)
 
   }
 
-  dat <- map_ir_to_areas(ir, cluster_list)
+  dat <- map_ir_to_areas(ir$ir, cluster_list)
 
   cluster_level <- clusters %>%
     filter(!is.na(geoloc_area_id)) %>%
@@ -427,7 +431,7 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
 
   names(cluster_list_admin1) <- surveys$survey_id
 
-  dat_admin1 <- map_ir_to_areas(ir, cluster_list_admin1, single_tips = FALSE)
+  dat_admin1 <- map_ir_to_areas(ir$ir, cluster_list_admin1, single_tips = FALSE)
   dat_admin1$ir <- lapply(dat_admin1$ir, zap_labels)
 
   message("Calculating district-level ASFR")
@@ -468,7 +472,7 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
     left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
     select(-agegr)
 
-  asfr_plot_nat <- Map(calc_asfr, ir,
+  asfr_plot_nat <- Map(calc_asfr, ir$ir,
                        # by = list(~survey_id + survtype + survyear + area_id),
                        tips = list(c(0,15)),
                        agegr= list(3:10*5),
@@ -528,6 +532,7 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
   out <- list()
   out$asfr <- asfr
   out$plot <- plot
+  out$nrow_ir <- ir$nrow_ir
 
   out
 
