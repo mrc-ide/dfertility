@@ -1,4 +1,4 @@
-all: ar1_trend.so ar1.so arima_trend.so arima.so rw.so rw1_trend.so model7.cpp model7_eth.cpp model7_mwi_rwa.cpp	model7_zwe.cpp # Comment here preserves the prior tab
+all: ar1_trend.so ar1.so arima_trend.so arima.so rw.so rw1_trend.so model7.so model7_eth.so model7_mwi_rwa.so	model7_zwe.so ## Comment here preserves the prior tab
 ar1_trend.so: ar1_trend.cpp
 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('ar1_trend.cpp', '-O1 -g',DLLFLAGS='')"
 ar1.so: ar1.cpp
