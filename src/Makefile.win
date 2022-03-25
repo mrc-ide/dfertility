@@ -1,5 +1,5 @@
-all: ar1_trend.dll ar1.dll arima_trend.dll arima.dll rw.dll rw1_trend.dll model7.dll
-	# Comment here preserves the prior tab
+all: ar1_trend.dll ar1.dll arima_trend.dll arima.dll rw.dll rw1_trend.dll model7.dll model7_eth.dll
+model7_mwi_rwa.dll model7_zwe.dll	# Comment here preserves the prior tab
 ar1_trend.dll: ar1_trend.cpp
 	Rscript --vanilla -e "TMB::compile('ar1_trend.cpp', '-O1 -g',DLLFLAGS='')"
 ar1.dll: ar1.cpp
@@ -14,6 +14,12 @@ rw1_trend.dll: rw1_trend.cpp
 	Rscript --vanilla -e "TMB::compile('rw1_trend.cpp', '-O1 -g',DLLFLAGS='')"
 model7.dll: model7.cpp
 	Rscript --vanilla -e "TMB::compile('model7.cpp', '-O1 -g',DLLFLAGS='')"
+model7_eth.dll: model7_eth.cpp
+	Rscript --vanilla -e "TMB::compile('model7_eth.cpp', '-O1 -g',DLLFLAGS='')"
+model7_mwi_rwa.dll: model7_mwi_rwa.cpp
+	Rscript --vanilla -e "TMB::compile('model7_mwi_rwa.cpp', '-O1 -g',DLLFLAGS='')"
+model7_zwe.dll: model7_zwe.cpp
+	Rscript --vanilla -e "TMB::compile('model7_zwe.cpp', '-O1 -g',DLLFLAGS='')"
 
 clean:
 	rm -rf *.dll
