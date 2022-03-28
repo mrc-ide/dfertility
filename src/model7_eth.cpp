@@ -587,7 +587,7 @@ Type objective_function<Type>::operator() ()
   REPORT(log_prec_smooth_iid);
 
   // REPORT(beta_period);
-  REPORT(phi_period);
+  // REPORT(phi_period);
   // REPORT(phi_arima_period);
 
   // REPORT(beta_tips_dummy);
