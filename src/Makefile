@@ -15,7 +15,7 @@ model7.so: model7.cpp
 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('model7.cpp', '-O1 -g',DLLFLAGS='')"
 model7_eth.so: model7_eth.cpp
 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('model7_eth.cpp', '-O1 -g',DLLFLAGS='')"
-model7_mwi.so: model7_mwi_rwa.cpp
+model7_mwi.so: model7_mwi.cpp
 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('model7_mwi_rwa.cpp', '-O1 -g',DLLFLAGS='')"
 model7_zwe.so: model7_zwe.cpp
 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('model7_zwe.cpp', '-O1 -g',DLLFLAGS='')"
