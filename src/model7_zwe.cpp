@@ -127,6 +127,19 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(beta_spike_2010);
   nll -= dnorm(beta_spike_2010, Type(0.05), Type(0.1), true).sum();
 
+  PARAMETER_ARRAY(iota1);
+  PARAMETER(log_prec_iota1);
+  DATA_SPARSE_MATRIX(R_iota1);
+  DATA_SPARSE_MATRIX(R_2010_spike);
+  DATA_SPARSE_MATRIX(Z_iota1);
+
+  Type prec_iota1 = exp(log_prec_iota1);
+  // nll -= dgamma(log_prec_iota1, Type(1), Type(2000), true);
+  nll -= dnorm(log_prec_iota1, Type(5), Type(1), true);
+
+  nll += SEPARABLE(GMRF(R_iota1), GMRF(R_2010_spike))(iota1);
+  vector<Type> iota1_v(iota1);
+
   PARAMETER_ARRAY(zeta2);
   PARAMETER(log_prec_zeta2);
   DATA_SPARSE_MATRIX(R_zeta2);
@@ -413,6 +426,7 @@ Type objective_function<Type>::operator() ()
                      // + Z_spatial * spatial
                      + Z_spatial * u_spatial_str * sqrt(1/prec_spatial)
                      + X_spike_2010 * beta_spike_2010
+                     + Z_iota1 * iota1_v * sqrt(1/prec_iota1)
                      // + X_urban_dummy * beta_urban_dummy
                      // + Z_country * u_country * sqrt(1/prec_country)
                      // + Z_omega1 * omega1_v * sqrt(1/prec_omega1)
