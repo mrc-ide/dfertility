@@ -1,9 +1,9 @@
 get_fertility_surveys <- function(surveys) {
 
-  ird <- dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
+  ird <- rdhs::dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
 
   ird <- ird %>%
-    dplyr::mutate(path = unlist(get_datasets(., clear_cache = TRUE))) %>%
+    dplyr::mutate(path = unlist(rdhs::get_datasets(., clear_cache = TRUE))) %>%
     dplyr::bind_rows()
 
   ir <- lapply(ird$path, readRDS) %>%
@@ -110,13 +110,13 @@ ir_by_area <- function(ir, area_list, n, total) {
   print(paste(n, "of", total))
 
   ir_int <- ir %>%
-    left_join(area_list, by=c("v001" = "cluster_id")) %>%
-    mutate(survey_id = factor(survey_id),
+    dplyr::left_join(area_list, by=c("v001" = "cluster_id")) %>%
+    dplyr::mutate(survey_id = factor(survey_id),
            survtype = factor(survtype),
            survyear = factor(survyear),
            area_id = factor(area_id)) %>%
     dplyr::filter(!is.na(area_id)) %>%
-    group_split(area_id)
+    dplyr::group_split(area_id)
 
   return(ir_int)
 
@@ -217,20 +217,20 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
   mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
 
   mics_wm_asfr <- mics_wm %>%
-    type.convert() %>%
-    mutate(survey_id = factor(survey_id),
+    utils::type.convert() %>%
+    dplyr::mutate(survey_id = factor(survey_id),
            area_id = factor(area_id)) %>%
-    arrange(survey_id) %>%
-    group_by(survey_id) %>%
-    group_split()
+    dplyr::arrange(survey_id) %>%
+    dplyr::group_by(survey_id) %>%
+    dplyr::group_split()
 
   mics_births_asfr <- mics_births_to_women %>%
-    left_join(mics_wm) %>%
-    mutate(survey_id = factor(survey_id),
+    dplyr::left_join(mics_wm) %>%
+    dplyr::mutate(survey_id = factor(survey_id),
            area_id = factor(area_id)) %>%
-    arrange(survey_id) %>%
-    group_by(survey_id) %>%
-    group_split()
+    dplyr::arrange(survey_id) %>%
+    dplyr::group_by(survey_id) %>%
+    dplyr::group_split()
 
   message("Calculating district-level MICS ASFR")
 
@@ -250,16 +250,16 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
                    bhdata = mics_births_asfr,
                    bvars = list("cdob"),
                    counts = TRUE) %>%
-    bind_rows %>%
-    type.convert() %>%
-    separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
+    dplyr::bind_rows() %>%
+    utils::type.convert() %>%
+    tidyr::separate(col = survey_id, into = c(NA, "survyear", NA), sep = c(3,7), remove = FALSE, convert = TRUE) %>%
     dplyr::filter(period <= survyear) %>%
     # rename(age_group = agegr) %>%
-    mutate(survtype = "MICS",
+    dplyr::mutate(survtype = "MICS",
            iso3 = iso3
     ) %>%
-    left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
-    select(-agegr)
+    dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
+    dplyr::select(-agegr)
 
   message("Calculating aggregate MICS fertility rates")
   # For plotting:
@@ -278,18 +278,18 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
                         bhdata = mics_births_asfr,
                         bvars = list("cdob"),
                         counts = TRUE) %>%
-    bind_rows %>%
-    type.convert() %>%
-    separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
+    dplyr::bind_rows() %>%
+    utils::type.convert() %>%
+    tidyr::separate(col = survey_id, into = c(NA, "survyear", NA), sep = c(3,7), remove = FALSE, convert = TRUE) %>%
     dplyr::filter(period <= survyear) %>%
-    rename(value = asfr) %>%
+    dplyr::rename(value = asfr) %>%
     # rename(age_group = agegr) %>%
-    mutate(survtype = "MICS",
+    dplyr::mutate(survtype = "MICS",
            iso3 = iso3,
            variable = "asfr"
     ) %>%
-    left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
-    select(-agegr)
+    dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
+    dplyr::select(-agegr)
 
   mics_asfr_plot_nat <- Map(calc_asfr, mics_wm_asfr,
                             by = list(~survey_id),
@@ -317,19 +317,19 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
            area_id = iso3,
            variable = "asfr"
     ) %>%
-    dplyr::left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
+    dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
     dplyr::select(-agegr)
 
 
   mics_tfr_plot <- mics_asfr_plot %>%
     dplyr::group_by(survey_id, period, area_id) %>%
-    dplyr::summarise(value = 5*sum(value)) %>%
+    dplyr::summarise(value = 5 * sum(value)) %>%
     dplyr::mutate(variable = "tfr") %>%
     dplyr::filter(value > 0.5)
 
   mics_tfr_plot_nat <- mics_asfr_plot_nat %>%
     dplyr::group_by(survey_id, period, area_id) %>%
-    dplyr::summarise(value = 5*sum(value)) %>%
+    dplyr::summarise(value = 5 * sum(value)) %>%
     dplyr::mutate(variable = "tfr") %>%
     dplyr::filter(value > 0.5)
 
@@ -448,7 +448,7 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
     dplyr::filter(period <= survyear) %>%
     # rename(age_group = agegr) %>%
     dplyr::mutate(iso3 = iso3) %>%
-    dplyr::left_join(get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
+    dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
     dplyr::select(-agegr)
 
   message("Calculating aggregate fertility rates")
@@ -518,7 +518,7 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
     asfr <- asfr %>%
       dplyr::filter(!(survey_id == unique(missing_data[[i]]$survey_id) & tips %in% unique(missing_data[[i]]$tips)))
 
-    years <- unique(filter(asfr, survey_id == unique(missing_data[[i]]$survey_id))$period)
+    years <- unique(dplyr::filter(asfr, survey_id == unique(missing_data[[i]]$survey_id))$period)
 
     plot <- plot %>%
       dplyr::filter(!(survey_id == unique(missing_data[[i]]$survey_id) & !period %in% years))

@@ -105,7 +105,7 @@ sdreport_joint_precision <- function (obj, par.fixed = NULL, hessian.fixed = NUL
           G <- hessian.random %*% A
           G <- Matrix::as.matrix(G)
           M1 <- methods::cbind2(hessian.random, G)
-          M2 <- methods::cbind2(t(G), Matrix::as.matrix(t(A) %*% G) +
+          M2 <- methods::cbind2(Matrix::t(G), Matrix::as.matrix(Matrix::t(A) %*% G) +
                              hessian.fixed)
           M <- methods::rbind2(M1, M2)
           M <- Matrix::forceSymmetric(M, uplo = "L")
@@ -126,10 +126,10 @@ sdreport_joint_precision <- function (obj, par.fixed = NULL, hessian.fixed = NUL
   jointPrecision
 }
 
-rmvnorm_sparseprec <- function(n, mean = rep(0, nrow(prec)), prec = diag(lenth(mean))) {
+rmvnorm_sparseprec <- function(n, mean = rep(0, nrow(prec)), prec = diag(length(mean))) {
 
   z = matrix(stats::rnorm(n * length(mean)), ncol = n)
   L_inv = Matrix::Cholesky(prec)
-  v <- mean + Matrix::solve(as(L_inv, "pMatrix"), Matrix::solve(Matrix::t(as(L_inv, "Matrix")), z))
+  v <- mean + Matrix::solve(methods::as(L_inv, "pMatrix"), Matrix::solve(Matrix::t(methods::as(L_inv, "Matrix")), z))
   Matrix::as.matrix(Matrix::t(v))
 }

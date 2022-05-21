@@ -102,7 +102,7 @@ get_populations <- function(iso3_current, naomi_data_path) {
     lapply(readr::read_csv) %>%
     lapply(dplyr::left_join, areas_long) %>%
     dlpyr::bind_rows() %>%
-    dlpyr::mutate(period = year_labels(naomi:::calendar_quarter_to_quarter_id(calendar_quarter))) %>%
+    dlpyr::mutate(period = naomi::year_labels(naomi:::calendar_quarter_to_quarter_id(calendar_quarter))) %>%
     dlpyr::select(iso3, "area_id" , "area_name", "source", "sex", "age_group", "population", "period") %>%
     dlpyr::arrange(iso3)
 }

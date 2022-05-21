@@ -14,7 +14,7 @@ area_populations <- function(population, areas_wide, project, naomi_level) {
   )
 
   areas_wide <- areas_wide %>%
-    dplyr::select(all_of(col_nam)) %>%
+    dplyr::select(dplyr::all_of(col_nam)) %>%
     sf::st_drop_geometry() %>%
     dplyr::distinct() %>%
     dplyr::mutate(area_id = .data[[paste0("area_id", naomi_level)]])
@@ -50,7 +50,7 @@ area_populations <- function(population, areas_wide, project, naomi_level) {
 make_rw_structure_matrix <- function(x, order, adjust_diagonal = TRUE) {
 
   D_mat <- diff(diag(x), differences = order)
-  R_mat <- t(D_mat) %*% D_mat
+  R_mat <- Matrix::t(D_mat) %*% D_mat
 
   if(adjust_diagonal) {
     diag(R_mat) <- diag(R_mat) + 1E-6
@@ -83,7 +83,7 @@ make_adjacency_matrix <- function(areas, model_level) {
     dplyr::group_by(iso3) %>%
     dplyr::arrange(area_sort_order, .by_group = TRUE) %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(area_idx = row_number())
+    dplyr::mutate(area_idx = dplyr::row_number())
 
   #' Neighbor list
   nb <- sh %>%
@@ -170,16 +170,16 @@ make_model_frames_dev <- function(iso3,
            period = factor(period),
            urban = ifelse(area_id %in% c(
              dplyr::filter(areas_long, parent_area_id == "ETH_1_10")$area_id,
-             dplyr::filter(areas_long, str_detect(area_name, "Town"))$area_id,
+             dplyr::filter(areas_long, stringr::str_detect(area_name, "Town"))$area_id,
              dplyr::filter(areas_long, area_name %in% c("Harari", "Fafen (Jijiga)", "Erer"))$area_id),
              1, 0)
     ) %>%
     dplyr::arrange(period, area_id, age_group) %>%
-    dplyr::mutate(idx = factor(row_number()),
-           id.period = group_indices(., period)-1,
-           id.interaction1 = factor(group_indices(., age_group, period)),
-           id.interaction2 = factor(group_indices(., period, area_id)),
-           id.interaction3 = factor(group_indices(., age_group, area_id))
+    dplyr::mutate(idx = factor(dplyr::row_number()),
+           id.period = dplyr::group_indices(., period)-1,
+           id.interaction1 = factor(dplyr::group_indices(., age_group, period)),
+           id.interaction2 = factor(dplyr::group_indices(., period, area_id)),
+           id.interaction3 = factor(dplyr::group_indices(., age_group, area_id))
            # id.omega1 = factor(group_indices(., age_group, iso3)),
            # id.omega2 = factor(group_indices(., period, iso3))
     )
@@ -216,7 +216,7 @@ make_model_frames_dev <- function(iso3,
                          age_group = unique(mf_model$age_group)
   ) %>%
     dplyr::arrange(area_id, age_group, period) %>%
-    dplyr::mutate(idx_row = factor(row_number()))
+    dplyr::mutate(idx_row = factor(dplyr::row_number()))
 
   join <- aggregate_mf %>%
     dplyr::left_join(area_aggregation, by = "area_id") %>%
@@ -250,7 +250,7 @@ make_model_frames_dev <- function(iso3,
   ) %>%
     dplyr::bind_rows(data.frame(
       "age_group" = "Y015_Y049",
-      "model_age_group" = dplyr::filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group
+      "model_age_group" = dplyr::filter(naomi::get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group
     ))
 
   # asfr_out <- tidyr::crossing(
@@ -512,7 +512,7 @@ make_model_frames_batch <- function(lvl_map,
   # }
 
   obs <- asfr %>%
-    dplyr::left_join(areas %>% st_drop_geometry()) %>%
+    dplyr::left_join(sf::st_drop_geometry(areas)) %>%
     dplyr::mutate(period = factor(period, levels(mf_model$period))) %>%
     dplyr::filter(!is.na(births)) %>%
     dplyr::select(iso3, survey_id, survtype, area_id, area_level, period, age_group, tips, births, pys) %>%
@@ -536,20 +536,20 @@ make_model_frames_batch <- function(lvl_map,
     }, ., fertility_fit_level) %>%
     dplyr::bind_rows() %>%
     dplyr::mutate(area_id = factor(area_id, levels(mf_model$area_id))) %>%
-    dplyr::left_join(mf_model %>% select(area_id, age_group, period, idx))
+    dplyr::left_join(mf_model %>% dplyr::select(area_id, age_group, period, idx))
 
   aggregate_mf <- tidyr::crossing(area_id = area_aggregation$area_id,
                          period = unique(mf_model$period),
                          age_group = unique(mf_model$age_group)
   ) %>%
     dplyr::arrange(area_id, age_group, period) %>%
-    dplyr::mutate(idx_row = factor(row_number()))
+    dplyr::mutate(idx_row = factor(dplyr::row_number()))
 
   join <- aggregate_mf %>%
     dplyr::left_join(area_aggregation, by = "area_id") %>%
     dplyr::left_join(mf_model, by=c("iso3", "age_group", "period", "model_area_id" = "area_id")) %>%
     dplyr::mutate(x = 1) %>%
-    type.convert()
+    utils::type.convert()
 
   full_obs <- obs %>%
     dplyr::left_join(aggregate_mf, by=c("area_id", "age_group", "period")) %>%
@@ -572,8 +572,8 @@ make_model_frames_batch <- function(lvl_map,
   ## Outputs
 
   age_aggregation <- data.frame(
-    "age_group" = dplyr::filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group,
-    "model_age_group" = dplyr::filter(get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group
+    "age_group" = dplyr::filter(naomi::get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group,
+    "model_age_group" = dplyr::filter(naomi::get_age_groups(), age_group_start %in% 15:45, age_group_span == 5)$age_group
   ) %>%
     dplyr::bind_rows(data.frame(
       "age_group" = "Y015_Y049",
@@ -601,7 +601,7 @@ make_model_frames_batch <- function(lvl_map,
   #   dplyr::mutate(x = 1) %>%
   #   dplyr::filter(!is.na(model_area_id))
 
-  tfr_out <- crossing(
+  tfr_out <- tidyr::crossing(
     area_id = area_aggregation$area_id,
     age_group = "Y015_Y049",
     period = unique(mf_model$period),
@@ -643,8 +643,8 @@ make_model_frames_batch <- function(lvl_map,
   # mf$out$A_asfr_out <- A_asfr_out
   mf$out$A_tfr_out <- A_tfr_out
 
-  M_naomi_level_obs <- sparse.model.matrix(~0 + idx, mf$observations$naomi_level_obs)
-  M_full_obs <- sparse.model.matrix(~0 + idx, mf$observations$full_obs)
+  M_naomi_level_obs <- Matrix::sparse.model.matrix(~0 + idx, mf$observations$naomi_level_obs)
+  M_full_obs <- Matrix::sparse.model.matrix(~0 + idx, mf$observations$full_obs)
 
   Z <- list()
   Z$Z_spatial <- Matrix::sparse.model.matrix(~0 + area_id, mf$mf_model)
@@ -663,7 +663,7 @@ make_model_frames_batch <- function(lvl_map,
     dplyr::mutate(col_idx = dplyr::row_number()) %>%
     dplyr::select(col_idx, survtype) %>%
     dplyr::filter(survtype %in% c("AIS", "MIS")) %>%
-    dplyr::mutate(row_idx = row_number(),
+    dplyr::mutate(row_idx = dplyr::row_number(),
            x=1)
 
   X_extract_ais <-  Matrix::spMatrix(

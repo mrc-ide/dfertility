@@ -8,7 +8,7 @@ create_surveys_mics <- function(iso3, mics_indicators) {
   folder <- sharepoint$folder(site = Sys.getenv("SHAREPOINT_SITE"), path = Sys.getenv("MICS_ORDERLY_PATH"))
 
   mics_file_names <- folder$list() %>%
-    dplyr::filter(str_detect(name, tolower(iso3))) %>%
+    dplyr::filter(stringr::str_detect(name, tolower(iso3))) %>%
     .$name %>%
     sort()
 
@@ -70,20 +70,20 @@ filter_mics <- function(dat, mics_indicators, survey_id_i) {
   wm <- dat$wm
   colnames(wm) <- tolower(colnames(wm))
   wm <- wm %>%
-    select(dplyr::filter(indicators, filetype == "wm")$value)
+    dplyr::select(dplyr::filter(indicators, filetype == "wm")$value)
   colnames(wm) <- dplyr::filter(indicators, filetype == "wm")$id
 
   bh <- dat$bh
   colnames(bh) <- tolower(colnames(bh))
   bh <- bh %>%
-    select(dplyr::filter(indicators, filetype == "bh")$value)
+    dplyr::select(dplyr::filter(indicators, filetype == "bh")$value)
   colnames(bh) <- dplyr::filter(indicators, filetype == "bh")$id
 
 
   hh <- dat$hh
   colnames(hh) <- tolower(colnames(hh))
   hh <- hh %>%
-    select(dplyr::filter(indicators, filetype == "hh")$value)
+    dplyr::select(dplyr::filter(indicators, filetype == "hh")$value)
   colnames(hh) <- dplyr::filter(indicators, filetype == "hh")$id
 
   df <- list()
