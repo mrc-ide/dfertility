@@ -14,6 +14,8 @@ make_model_frames_dev(
 )
 }
 \arguments{
+\item{iso3}{iso3 code for country}
+
 \item{population}{Age/sex/space stratified population}
 
 \item{asfr}{ASFRs by district and time}

@@ -504,7 +504,7 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
   missing_data <- asfr %>%
     dplyr::group_by(survey_id, tips) %>%
     dplyr::summarise(births = sum(births)) %>%
-    dplyr::dplyr::filter(births < 5) %>%
+    dplyr::filter(births < 5) %>%
     dplyr::group_by(survey_id) %>%
     dplyr::group_split()
 

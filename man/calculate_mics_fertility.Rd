@@ -2,76 +2,10 @@
 % Please edit documentation in R/calculate_survey_fertility.R
 \name{calculate_mics_fertility}
 \alias{calculate_mics_fertility}
-\title{#' Join individual recode survey datasets by cluster to area IDs
-#' @param surveys Survey dataframe as created by \code{rdhs::dhs_surveys()}
-#' @param cluster_areas Dataframe of clusters assigned to areas. Output of \code{\link{cluster_areas}}.
-#' @param single_tips desc this
-#' @return Nested list: \code{df$ir} and \code{df$tips_surv}. \code{df$ir} has one list item per survey/area combination and \code{df$tips_surv} has the corroborating TIPS value.
-#' @export
-#' @seealso \code{\link{cluster_areas}}}
+\title{Calculate fertility rates from MICS data}
 \usage{
 calculate_mics_fertility(iso3, mics_wm, mics_births_to_women)
 }
 \description{
-
+Calculate fertility rates from MICS data
 }
-\details{
-ird <- dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
-
-ird <- ird \%>\%
-mutate(path = unlist(get_datasets(.))) \%>\%
-bind_rows()
-
-ir <- lapply(ird$path, readRDS) \%>\%
-lapply(function(x) {class(x) <- "data.frame"
-return(x)}) \%>\%
-Map(function(ir, surveys) {
-mutate(ir,
-surveyid = surveys$survey_id,
-country = surveys$CountryName,
-survyear = surveys$SurveyYear,
-survtype = surveys$SurveyType)
-}, ., group_split(surveys, SurveyId))
-\subsection{I think this mess was necessary because the order of cluster_areas was not always the same as the order for ir.. Double check. Otherwise the simple names(ir) <- names(cluster_areas) is sufficient}{
-}
-}
-\section{names(ir) <- ir \%>\%}{
-
-}
-
-\section{lapply("[", "surveyid") \%>\%}{
-
-}
-
-\section{lapply(unique) \%>\%}{
-
-}
-
-\section{bind_rows \%>\%}{
-
-}
-
-\section{left_join(clusters \%>\%}{
-
-}
-
-\section{select(survey_id, DHS_survey_id) \%>\%}{
-
-}
-
-\section{unique,}{
-
-}
-
-\section{by=c("surveyid" = "DHS_survey_id")) \%>\%}{
-
-}
-
-\section{select(-surveyid) \%>\%}{
-
-}
-
-\section{.$survey_id}{
-
-}
-

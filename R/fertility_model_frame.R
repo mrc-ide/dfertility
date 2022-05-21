@@ -109,7 +109,7 @@ make_adjacency_matrix <- function(areas, model_level) {
 
 #' Make model frames
 #' @description Create model frames and aggregation matrices for TMB model.
-#' @iso3
+#' @param iso3 iso3 code for country
 #' @param population Age/sex/space stratified population
 #' @param asfr ASFRs by district and time
 #' @param areas Area hierarchy
@@ -420,7 +420,6 @@ make_model_frames_dev <- function(iso3,
 
 #' Make model frames for batch running
 #' @description Create model frames and aggregation matrices for TMB model.
-#' @iso3
 #' @param population Age/sex/space stratified population
 #' @param asfr ASFRs by district and time
 #' @param areas_list List of area files
