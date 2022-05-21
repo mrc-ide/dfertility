@@ -427,7 +427,6 @@ make_model_frames_dev <- function(iso3,
 #' @param lvl Dataframe of district and province levels
 #' @param project Model will by default produce estimates up to year of last survey. Integer projection year if desired, else FALSE
 #' @export
-#'
 
 make_model_frames_batch <- function(lvl_map,
                                     population,

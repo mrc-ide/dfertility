@@ -38,7 +38,6 @@ get_input_files <- function(iso3_current, naomi_data_path) {
 #' Make area dataframes
 #'
 #' @description Create area hierarchy dataframes in the Naomi package format. The function will always return the area hierarchy in long format, with arguments additionally to return full and wide hierarchies
-#'
 #' @param iso3_current A string of one or more ISO-3 codes
 #' @param naomi_data_path A path to directory containing input data files
 #' @param full Boolean to return the full area heirarchy

@@ -1,8 +1,6 @@
 #' Fit TMB model
 #'
 #' @export
-#'
-#'
 
 fit_sample_tmb <- function(data, par, random) {
   obj <-  TMB::MakeADFun(data = data,
@@ -24,8 +22,6 @@ fit_sample_tmb <- function(data, par, random) {
 }
 
 #' Sample TMB
-#'
-
 sample_tmb <- function (fit, nsample = 1000, rng_seed = NULL, random_only = TRUE,
           verbose = FALSE)
 {

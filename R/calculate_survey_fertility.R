@@ -121,98 +121,97 @@ ir_by_area <- function(ir, area_list, n, total) {
   return(ir_int)
 
 }
-#'
-#' #' Join individual recode survey datasets by cluster to area IDs
-#' #' @param surveys Survey dataframe as created by \code{rdhs::dhs_surveys()}
-#' #' @param cluster_areas Dataframe of clusters assigned to areas. Output of \code{\link{cluster_areas}}.
-#' #' @param single_tips desc this
-#' #' @return Nested list: \code{df$ir} and \code{df$tips_surv}. \code{df$ir} has one list item per survey/area combination and \code{df$tips_surv} has the corroborating TIPS value.
-#' #' @export
-#' #' @seealso \code{\link{cluster_areas}}
-#'
-#' clusters_to_surveys <- function(iso3, surveys, cluster_areas, level, single_tips = TRUE) {
-#'
-#'   ird <- dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
-#'
-#'   ird <- ird %>%
-#'     mutate(path = unlist(get_datasets(.))) %>%
-#'     bind_rows()
-#'
-#'   ir <- lapply(ird$path, readRDS) %>%
-#'     lapply(function(x) {class(x) <- "data.frame"
-#'     return(x)}) %>%
-#'     Map(function(ir, surveys) {
-#'       mutate(ir,
-#'              surveyid = surveys$survey_id,
-#'              country = surveys$CountryName,
-#'              survyear = surveys$SurveyYear,
-#'              survtype = surveys$SurveyType)
-#'     }, ., group_split(surveys, SurveyId))
-#'
-#'
-#'   ## I think this mess was necessary because the order of cluster_areas was not always the same as the order for ir.. Double check. Otherwise the simple names(ir) <- names(cluster_areas) is sufficient
-#'   # names(ir) <- ir %>%
-#'   #   lapply("[", "surveyid") %>%
-#'   #   lapply(unique) %>%
-#'   #   bind_rows %>%
-#'   #   left_join(clusters %>%
-#'   #               select(survey_id, DHS_survey_id) %>%
-#'   #               unique,
-#'   #             by=c("surveyid" = "DHS_survey_id")) %>%
-#'   #   select(-surveyid) %>%
-#'   #   .$survey_id
-#'
-#'   names(ir) <- names(cluster_areas)
-#'
-#'   if(iso3 == "ETH") {
-#'
-#'     cols_edit <- c("v008", "v011", "b3_01", "b3_02", "b3_03", "b3_04", "b3_05", "b3_06", "b3_07", "b3_08", "b3_09", "b3_10", "b3_11", "b3_12", "b3_13", "b3_14", "b3_15", "b3_16", "b3_17", "b3_18", "b3_19", "b3_20")
-#'
-#'     ir <- ir %>%
-#'       lapply(function(x) x %>% mutate_at(.vars = cols_edit, .funs = ~(.+92)))
-#'
-#'   }
-#'
-#'
-#'   if(level > 0) {
-#'
-#'     ir <- Map(ir_by_area, ir, cluster_areas[names(ir)], n=1:length(ir), total=length(ir)) %>%
-#'       unlist(recursive = FALSE)
-#'
-#'     survey_type <- ir %>%
-#'       lapply("[", "survtype") %>%
-#'       lapply(unique) %>%
-#'       bind_rows
-#'
-#'     if(!single_tips)
-#'       tips_surv <- list("DHS" = c(0,15), "MIS" = c(0,5), "AIS" = c(0,5))[survey_type$survtype]
-#'     else
-#'       tips_surv <- list("DHS" = c(0:15), "MIS" = c(0:5), "AIS" = c(0:5))[survey_type$survtype]
-#'
-#'   } else {
-#'
-#'     ir <- lapply(ir, function(x) {
-#'       mutate(x, area_id = unique(surveys$iso3))
-#'     })
-#'
-#'     if(!single_tips)
-#'       tips_surv <- list("DHS" = c(0,15), "MIS" = c(0,5), "AIS" = c(0,5))[surveys$SurveyType]
-#'     else
-#'       tips_surv <- list("DHS" = c(0:15), "MIS" = c(0:5), "AIS" = c(0:5))[surveys$SurveyType]
-#'
-#'   }
-#'
-#'   dat <- list()
-#'   dat$ir <- ir
-#'   dat$tips_surv <- tips_surv
-#'
-#'   return(dat)
-#'
-#' }
+
+# #' Join individual recode survey datasets by cluster to area IDs
+# #' @param surveys Survey dataframe as created by \code{rdhs::dhs_surveys()}
+# #' @param cluster_areas Dataframe of clusters assigned to areas. Output of \code{\link{cluster_areas}}.
+# #' @param single_tips desc this
+# #' @return Nested list: \code{df$ir} and \code{df$tips_surv}. \code{df$ir} has one list item per survey/area combination and \code{df$tips_surv} has the corroborating TIPS value.
+# #' @export
+# #' @seealso \code{\link{cluster_areas}}
+#
+# clusters_to_surveys <- function(iso3, surveys, cluster_areas, level, single_tips = TRUE) {
+#
+#   ird <- dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
+#
+#   ird <- ird %>%
+#     mutate(path = unlist(get_datasets(.))) %>%
+#     bind_rows()
+#
+#   ir <- lapply(ird$path, readRDS) %>%
+#     lapply(function(x) {class(x) <- "data.frame"
+#     return(x)}) %>%
+#     Map(function(ir, surveys) {
+#       mutate(ir,
+#              surveyid = surveys$survey_id,
+#              country = surveys$CountryName,
+#              survyear = surveys$SurveyYear,
+#              survtype = surveys$SurveyType)
+#     }, ., group_split(surveys, SurveyId))
+#
+#
+#   ## I think this mess was necessary because the order of cluster_areas was not always the same as the order for ir.. Double check. Otherwise the simple names(ir) <- names(cluster_areas) is sufficient
+#   # names(ir) <- ir %>%
+#   #   lapply("[", "surveyid") %>%
+#   #   lapply(unique) %>%
+#   #   bind_rows %>%
+#   #   left_join(clusters %>%
+#   #               select(survey_id, DHS_survey_id) %>%
+#   #               unique,
+#   #             by=c("surveyid" = "DHS_survey_id")) %>%
+#   #   select(-surveyid) %>%
+#   #   .$survey_id
+#
+#   names(ir) <- names(cluster_areas)
+#
+#   if(iso3 == "ETH") {
+#
+#     cols_edit <- c("v008", "v011", "b3_01", "b3_02", "b3_03", "b3_04", "b3_05", "b3_06", "b3_07", "b3_08", "b3_09", "b3_10", "b3_11", "b3_12", "b3_13", "b3_14", "b3_15", "b3_16", "b3_17", "b3_18", "b3_19", "b3_20")
+#
+#     ir <- ir %>%
+#       lapply(function(x) x %>% mutate_at(.vars = cols_edit, .funs = ~(.+92)))
+#
+#   }
+#
+#
+#   if(level > 0) {
+#
+#     ir <- Map(ir_by_area, ir, cluster_areas[names(ir)], n=1:length(ir), total=length(ir)) %>%
+#       unlist(recursive = FALSE)
+#
+#     survey_type <- ir %>%
+#       lapply("[", "survtype") %>%
+#       lapply(unique) %>%
+#       bind_rows
+#
+#     if(!single_tips)
+#       tips_surv <- list("DHS" = c(0,15), "MIS" = c(0,5), "AIS" = c(0,5))[survey_type$survtype]
+#     else
+#       tips_surv <- list("DHS" = c(0:15), "MIS" = c(0:5), "AIS" = c(0:5))[survey_type$survtype]
+#
+#   } else {
+#
+#     ir <- lapply(ir, function(x) {
+#       mutate(x, area_id = unique(surveys$iso3))
+#     })
+#
+#     if(!single_tips)
+#       tips_surv <- list("DHS" = c(0,15), "MIS" = c(0,5), "AIS" = c(0,5))[surveys$SurveyType]
+#     else
+#       tips_surv <- list("DHS" = c(0:15), "MIS" = c(0:5), "AIS" = c(0:5))[surveys$SurveyType]
+#
+#   }
+#
+#   dat <- list()
+#   dat$ir <- ir
+#   dat$tips_surv <- tips_surv
+#
+#   return(dat)
+#
+# }
 
 #' Calculate fertility rates from MICS data
 #' @export
-#'
 calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
 
   mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
@@ -235,7 +234,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
 
   message("Calculating district-level MICS ASFR")
 
-  #' For model:
+  # For model:
   mics_asfr <- Map(calc_asfr, mics_wm_asfr,
                    by = list(~area_id + survey_id),
                    tips = list(c(0:15)),
@@ -307,41 +306,41 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
                             bhdata = mics_births_asfr,
                             bvars = list("cdob"),
                             counts = TRUE) %>%
-    bind_rows %>%
-    type.convert() %>%
-    separate(col=survey_id, into=c(NA, "survyear", NA), sep=c(3,7), remove = FALSE, convert = TRUE) %>%
+    dplyr::bind_rows() %>%
+    utils::type.convert() %>%
+    tidyr::separate(col = survey_id, into = c(NA, "survyear", NA), sep = c(3,7), remove = FALSE, convert = TRUE) %>%
     dplyr::filter(period <= survyear) %>%
-    rename(value = asfr) %>%
+    dplyr::rename(value = asfr) %>%
     # rename(age_group = agegr) %>%
-    mutate(survtype = "MICS",
+    dplyr::mutate(survtype = "MICS",
            iso3 = iso3,
            area_id = iso3,
            variable = "asfr"
     ) %>%
-    left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
-    select(-agegr)
+    dplyr::left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
+    dplyr::select(-agegr)
 
 
   mics_tfr_plot <- mics_asfr_plot %>%
-    group_by(survey_id, period, area_id) %>%
-    summarise(value = 5*sum(value)) %>%
-    mutate(variable = "tfr") %>%
+    dplyr::group_by(survey_id, period, area_id) %>%
+    dplyr::summarise(value = 5*sum(value)) %>%
+    dplyr::mutate(variable = "tfr") %>%
     dplyr::filter(value > 0.5)
 
   mics_tfr_plot_nat <- mics_asfr_plot_nat %>%
-    group_by(survey_id, period, area_id) %>%
-    summarise(value = 5*sum(value)) %>%
-    mutate(variable = "tfr") %>%
+    dplyr::group_by(survey_id, period, area_id) %>%
+    dplyr::summarise(value = 5*sum(value)) %>%
+    dplyr::mutate(variable = "tfr") %>%
     dplyr::filter(value > 0.5)
 
   missing_data <- mics_asfr %>%
-    group_by(survey_id, tips) %>%
-    summarise(births = sum(births)) %>%
+    dplyr::group_by(survey_id, tips) %>%
+    dplyr::summarise(births = sum(births)) %>%
     dplyr::filter(births < 5) %>%
-    group_by(survey_id) %>%
-    group_split()
+    dplyr::group_by(survey_id) %>%
+    dplyr::group_split()
 
-  mics_plot <- bind_rows(mics_tfr_plot, mics_tfr_plot_nat, mics_asfr_plot, mics_asfr_plot_nat)
+  mics_plot <- dplyr::bind_rows(mics_tfr_plot, mics_tfr_plot_nat, mics_asfr_plot, mics_asfr_plot_nat)
 
   i <- 0
 
@@ -351,7 +350,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
     mics_asfr <- mics_asfr %>%
       dplyr::filter(!(survey_id == unique(missing_data[[i]]$survey_id) & tips %in% unique(missing_data[[i]]$tips)))
 
-    years <- unique(filter(mics_asfr, survey_id == unique(missing_data[[i]]$survey_id))$period)
+    years <- unique(dplyr::filter(mics_asfr, survey_id == unique(missing_data[[i]]$survey_id))$period)
 
     mics_plot <- mics_plot %>%
       dplyr::filter(!(survey_id == unique(missing_data[[i]]$survey_id) & !period %in% years))
@@ -363,20 +362,18 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
   out$mics_plot <- mics_plot
 
   out
-
 }
 
 #' Calculate fertility rates from DHS, MIS, AIS data
 #' @export
-#'
 calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
 
   mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
 
   cluster_list <- clusters %>%
-    rename(area_id = geoloc_area_id) %>%
-    group_by(survey_id) %>%
-    group_split
+    dplyr::rename(area_id = geoloc_area_id) %>%
+    dplyr::group_by(survey_id) %>%
+    dplyr::group_split()
 
   names(cluster_list) <- surveys$survey_id
 
@@ -390,7 +387,7 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
 
       col_positions <- grep("v011|v008|^b3\\_[0-9]*", colnames(ir))
       ir <- ir %>%
-        mutate(across(col_positions, ~{.x+92}))
+        dplyr::mutate(dplyr::across(col_positions, ~{.x+92}))
     }
 
     ir$ir <- lapply(ir$ir, adjust_eth_months)
@@ -401,35 +398,35 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
 
   cluster_level <- clusters %>%
     dplyr::filter(!is.na(geoloc_area_id)) %>%
-    separate(geoloc_area_id, into=c(NA, "area_level", NA), sep=c(4,5), remove=FALSE, convert=TRUE) %>%
-    mutate(area_level = ifelse(geoloc_area_id == iso3, 0, area_level)) %>%
-    group_by(area_level) %>%
-    group_split()
+    tidyr::separate(geoloc_area_id, into = c(NA, "area_level", NA), sep = c(4,5), remove = FALSE, convert = TRUE) %>%
+    dplyr::mutate(area_level = ifelse(geoloc_area_id == iso3, 0, area_level)) %>%
+    dplyr::group_by(area_level) %>%
+    dplyr::group_split()
 
   get_admin1_clusters <- function(cluster_level) {
     lvl <- unique(cluster_level$area_level)
 
     if(lvl > 1) {
       cluster_level %>%
-        left_join(areas_wide %>%
-                    st_drop_geometry() %>%
-                    select(area_id1, paste0("area_id", lvl)) %>%
-                    distinct(),
-                  by=c("geoloc_area_id" = paste0("area_id", lvl))) %>%
-        rename(area_id = area_id1) %>%
-        select(survey_id, cluster_id, area_id)
+        dplyr::left_join(areas_wide %>%
+                    sf::st_drop_geometry() %>%
+                    dplyr::select(area_id1, paste0("area_id", lvl)) %>%
+                    dplyr::distinct(),
+                  by = c("geoloc_area_id" = paste0("area_id", lvl))) %>%
+        dplyr::rename(area_id = area_id1) %>%
+        dplyr::select(survey_id, cluster_id, area_id)
     } else {
       cluster_level %>%
-        rename(area_id = geoloc_area_id) %>%
-        select(survey_id, cluster_id, area_id)
+        dplyr::rename(area_id = geoloc_area_id) %>%
+        dplyr::select(survey_id, cluster_id, area_id)
     }
   }
 
   cluster_list_admin1 <- lapply(cluster_level, get_admin1_clusters) %>%
-    bind_rows() %>%
-    ungroup() %>%
-    group_by(survey_id) %>%
-    group_split()
+    dplyr::bind_rows() %>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(survey_id) %>%
+    dplyr::group_split()
 
   names(cluster_list_admin1) <- surveys$survey_id
 
@@ -446,13 +443,13 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
               strata = list(NULL),
               varmethod = list("none"),
               counts = TRUE) %>%
-    bind_rows %>%
-    type.convert %>%
-    dplyr::filter(period<=survyear) %>%
+    dplyr::bind_rows() %>%
+    utils::type.convert() %>%
+    dplyr::filter(period <= survyear) %>%
     # rename(age_group = agegr) %>%
-    mutate(iso3 = iso3) %>%
-    left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
-    select(-agegr)
+    dplyr::mutate(iso3 = iso3) %>%
+    dplyr::left_join(get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
+    dplyr::select(-agegr)
 
   message("Calculating aggregate fertility rates")
 
@@ -464,15 +461,14 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
                    strata = list(NULL),
                    varmethod = list("none"),
                    counts = TRUE) %>%
-    bind_rows %>%
-    type.convert %>%
-    dplyr::filter(period<=survyear) %>%
-    # rename(age_group = agegr) %>%
-    mutate(iso3 = iso3,
+    dplyr::bind_rows() %>%
+    utils::type.convert() %>%
+    dplyr::filter(period <= survyear) %>%
+    dplyr::mutate(iso3 = iso3,
            variable = "asfr") %>%
-    rename(value = asfr) %>%
-    left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
-    select(-agegr)
+    dplyr::rename(value = asfr) %>%
+    dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
+    dplyr::select(-agegr)
 
   asfr_plot_nat <- Map(calc_asfr, ir$ir,
                        # by = list(~survey_id + survtype + survyear + area_id),
@@ -482,38 +478,37 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
                        strata = list(NULL),
                        varmethod = list("none"),
                        counts = TRUE) %>%
-    bind_rows(.id = "survey_id") %>%
-    separate(survey_id, into=c(NA, "survyear", "survtype"), sep=c(3,7), remove=FALSE, convert=TRUE) %>%
-    type.convert %>%
+    dplyr::bind_rows(.id = "survey_id") %>%
+    tidyr::separate(survey_id, into = c(NA, "survyear", "survtype"), sep = c(3, 7), remove = FALSE, convert = TRUE) %>%
+    utils::type.convert() %>%
     dplyr::filter(period<=survyear) %>%
-    # rename(age_group = agegr) %>%
-    mutate(iso3 = iso3,
+    dplyr::mutate(iso3 = iso3,
            area_id = iso3,
            variable = "asfr") %>%
-    rename(value = asfr) %>%
-    left_join(get_age_groups() %>% select(age_group, age_group_label), by=c("agegr" = "age_group_label")) %>%
-    select(-agegr)
+    dplyr::rename(value = asfr) %>%
+    dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
+    dplyr::select(-agegr)
 
   tfr_plot <- asfr_plot %>%
-    group_by(survey_id, period, area_id) %>%
-    summarise(value = 5*sum(value)) %>%
-    mutate(variable = "tfr") %>%
+    dplyr::group_by(survey_id, period, area_id) %>%
+    dplyr::summarise(value = 5 * sum(value)) %>%
+    dplyr::mutate(variable = "tfr") %>%
     dplyr::filter(value > 0.5)
 
   tfr_plot_nat <- asfr_plot_nat %>%
-    group_by(survey_id, period, area_id) %>%
-    summarise(value = 5*sum(value)) %>%
-    mutate(variable = "tfr") %>%
+    dplyr::group_by(survey_id, period, area_id) %>%
+    dplyr::summarise(value = 5 * sum(value)) %>%
+    dplyr::mutate(variable = "tfr") %>%
     dplyr::filter(value > 0.5)
 
   missing_data <- asfr %>%
-    group_by(survey_id, tips) %>%
-    summarise(births = sum(births)) %>%
-    dplyr::filter(births < 5) %>%
-    group_by(survey_id) %>%
-    group_split()
+    dplyr::group_by(survey_id, tips) %>%
+    dplyr::summarise(births = sum(births)) %>%
+    dplyr::dplyr::filter(births < 5) %>%
+    dplyr::group_by(survey_id) %>%
+    dplyr::group_split()
 
-  plot <- bind_rows(tfr_plot, tfr_plot_nat, asfr_plot, asfr_plot_nat)
+  plot <- dplyr::bind_rows(tfr_plot, tfr_plot_nat, asfr_plot, asfr_plot_nat)
 
   i <- 0
 
