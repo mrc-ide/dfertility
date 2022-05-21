@@ -11,12 +11,11 @@ solveSubset <- function(Q, L = Matrix::Cholesky(Q, super = TRUE, perm = TRUE), d
   invQ <- .Call("tmb_invQ", L, PACKAGE = "TMB")
   iperm <- Matrix::invPerm(L@perm + 1L)
   if (diag) {
-    invQ <- Matrix::diag(invQ)[iperm]
+    return(Matrix::diag(invQ)[iperm])
   }
   else {
-    invQ <- invQ[iperm, iperm, drop = FALSE]
+    return(invQ[iperm, iperm, drop = FALSE])
   }
-  invQ
 }
 
 #' Get Joint Precision of TMB Fixed and Random
@@ -104,11 +103,11 @@ sdreport_joint_precision <- function (obj, par.fixed = NULL, hessian.fixed = NUL
         }
         else if (!ignore.parm.uncertainty) {
           G <- hessian.random %*% A
-          G <- as.matrix(G)
-          M1 <- cbind2(hessian.random, G)
-          M2 <- cbind2(t(G), as.matrix(t(A) %*% G) +
+          G <- Matrix::as.matrix(G)
+          M1 <- methods::cbind2(hessian.random, G)
+          M2 <- methods::cbind2(t(G), Matrix::as.matrix(t(A) %*% G) +
                              hessian.fixed)
-          M <- rbind2(M1, M2)
+          M <- methods::rbind2(M1, M2)
           M <- Matrix::forceSymmetric(M, uplo = "L")
           dn <- c(names(par)[r], names(par[-r]))
           dimnames(M) <- list(dn, dn)
@@ -129,8 +128,8 @@ sdreport_joint_precision <- function (obj, par.fixed = NULL, hessian.fixed = NUL
 
 rmvnorm_sparseprec <- function(n, mean = rep(0, nrow(prec)), prec = diag(lenth(mean))) {
 
-  z = matrix(rnorm(n * length(mean)), ncol = n)
+  z = matrix(stats::rnorm(n * length(mean)), ncol = n)
   L_inv = Matrix::Cholesky(prec)
   v <- mean + Matrix::solve(as(L_inv, "pMatrix"), Matrix::solve(Matrix::t(as(L_inv, "Matrix")), z))
-  as.matrix(Matrix::t(v))
+  Matrix::as.matrix(Matrix::t(v))
 }

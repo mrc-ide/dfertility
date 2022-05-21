@@ -15,10 +15,10 @@ create_surveys_mics <- function(iso3, mics_indicators) {
   mics_survey_names <- toupper(stringr::str_replace(mics_file_names, ".rds", ""))
 
   mics_file_names <- lapply(tolower(unique(dplyr::filter(mics_indicators, survey_id %in% mics_survey_names)$survey_id)),
-         grep, x=mics_file_names, value=TRUE
+         grep, x = mics_file_names, value = TRUE
   ) %>%
-    unlist %>%
-    sort
+    unlist() %>%
+    sort()
 
 
   rename_datasets_key <- mics_indicators %>%
@@ -92,7 +92,7 @@ filter_mics <- function(dat, mics_indicators, survey_id_i) {
     dplyr::filter(!is.na(wdob), !is.na(cluster), !is.na(hh_number), !is.na(line_number), !is.na(doi)) %>%
     dplyr::arrange(cluster, hh_number, line_number) %>%
     dplyr::group_by(cluster, hh_number, line_number) %>%
-    dplyr::mutate(unique_id = cur_group_id())
+    dplyr::mutate(unique_id = dplyr::cur_group_id())
 
   df$bh <- bh %>%
     dplyr::mutate(survey_id = survey_id_i)
@@ -116,28 +116,28 @@ transform_mics <- function(mics_survey_data, mics_indicators) {
 
   wm <- mics_dat %>%
     lapply("[[", "wm") %>%
-    bind_rows(.id = "survey_id")
+    dplyr::bind_rows(.id = "survey_id")
 
   hh <- mics_dat %>%
     lapply("[[", "hh") %>%
     lapply(function(x) {
       x %>%
-        left_join(data.frame(mics_area_name = attr(x$mics_area_name, "labels"),
-                             mics_area_name_label = str_to_title(
+        dplyr::left_join(data.frame(mics_area_name = attr(x$mics_area_name, "labels"),
+                             mics_area_name_label = stringr::str_to_title(
                                names(attr(x$mics_area_name, "labels")))
                              )
                   ) %>%
-        select(-mics_area_name) %>%
-        dplyr::mutate(mics_area_name_label = str_remove_all(mics_area_name_label, "\\u0093|\\u0094"),
+        dplyr::select(-mics_area_name) %>%
+        dplyr::mutate(mics_area_name_label = stringr::str_remove_all(mics_area_name_label, "\\u0093|\\u0094"),
                mics_area_name_label = stringr::str_trim(mics_area_name_label))
 
     }) %>%
-    bind_rows(.id = "survey_id")
+    dplyr::bind_rows(.id = "survey_id")
 
 
   bh <- mics_dat %>%
     lapply("[[", "bh") %>%
-    bind_rows(.id = "survey_id")
+    dplyr::bind_rows(.id = "survey_id")
 
   df <- list()
   df$wm <- wm
@@ -145,7 +145,6 @@ transform_mics <- function(mics_survey_data, mics_indicators) {
   df$bh <- bh
 
   return(df)
-
 }
 
 #' Join household datasets with area hierarchy
@@ -157,21 +156,21 @@ join_survey_areas <- function(fertility_mics_data, areas, warn=FALSE) {
     warning
   else stop
 
-  areas <- areas %>% st_drop_geometry()
+  areas <- sf::st_drop_geometry(areas)
 
   dat <- fertility_mics_data$hh
 
   lvl <- dat %>%
-    distinct(survey_id, area_level)
+    dplyr::distinct(survey_id, area_level)
 
   area_survey_level <- areas %>%
-    left_join(lvl)
+    dplyr::left_join(lvl)
 
   dat_merge <- dat %>%
-    full_join(area_survey_level %>%
-                select(survey_id, area_id, area_name, area_level) %>%
+    dplyr::full_join(area_survey_level %>%
+                dplyr::select(survey_id, area_id, area_name, area_level) %>%
                 dplyr::filter(!is.na(survey_id)),
-              by=c("mics_area_name_label" = "area_name", "area_level", "survey_id")
+              by = c("mics_area_name_label" = "area_name", "area_level", "survey_id")
     )
 
 
@@ -179,12 +178,12 @@ join_survey_areas <- function(fertility_mics_data, areas, warn=FALSE) {
 
     missing_areas <- dat_merge %>%
       dplyr::filter(is.na(area_id)) %>%
-      select(survey_id, mics_area_name_label, area_id) %>%
-      distinct %>%
-      rename(mics_area_name = mics_area_name_label)
+      dplyr::select(survey_id, mics_area_name_label, area_id) %>%
+      dplyr::distinct() %>%
+      dplyr::rename(mics_area_name = mics_area_name_label)
 
     errfun("\n\nSurvey regions were not matched to areas:\n",
-         paste0(capture.output(missing_areas), collapse = "\n"),
+         paste0(utils::capture.output(missing_areas), collapse = "\n"),
          "\n\nThis must be corrected \n \n"
     )
   }
@@ -193,21 +192,21 @@ join_survey_areas <- function(fertility_mics_data, areas, warn=FALSE) {
 
     missing_areas <- dat_merge %>%
       dplyr::filter(is.na(cluster)) %>%
-      select(survey_id, mics_area_name_label, area_id) %>%
-      distinct %>%
-      rename(area_name = mics_area_name_label)
+      dplyr::select(survey_id, mics_area_name_label, area_id) %>%
+      dplyr::distinct() %>%
+      dplyr::rename(area_name = mics_area_name_label)
 
     warning("\n\nAreas were not found in MICS survey:\n",
-            paste0(capture.output(missing_areas), collapse = "\n"),
+            paste0(utils::capture.output(missing_areas), collapse = "\n"),
             "\n\nThis may be because the survey did not sample these regions"
           )
 
   }
 
   fertility_mics_data$hh <- dat %>%
-    left_join(area_survey_level %>%
-                select(survey_id, area_id, area_name, area_level),
-              by=c("mics_area_name_label" = "area_name", "area_level", "survey_id")
+    dplyr::left_join(area_survey_level %>%
+                dplyr::select(survey_id, area_id, area_name, area_level),
+              by = c("mics_area_name_label" = "area_name", "area_level", "survey_id")
     )
 
   fertility_mics_data
@@ -222,14 +221,13 @@ make_asfr_inputs <- function(mics_survey_areas, mics_survey_data) {
   df <- list()
 
   df$wm <- dat$wm %>%
-    left_join(dat$hh %>% select(survey_id, cluster, hh_number, area_id))
+    dplyr::left_join(dat$hh %>% dplyr::select(survey_id, cluster, hh_number, area_id))
 
   df$births_to_women <- dat$wm %>%
-    select(survey_id, cluster, hh_number, line_number, unique_id) %>%
-    left_join(dat$bh %>% select(survey_id, cluster, hh_number, line_number, cdob)) %>%
-    select(survey_id, unique_id, cdob) %>%
+    dplyr::select(survey_id, cluster, hh_number, line_number, unique_id) %>%
+    dplyr::left_join(dat$bh %>% dplyr::select(survey_id, cluster, hh_number, line_number, cdob)) %>%
+    dplyr::select(survey_id, unique_id, cdob) %>%
     dplyr::filter(!is.na(cdob))
 
   df
-
 }

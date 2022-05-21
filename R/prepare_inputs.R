@@ -11,10 +11,13 @@ get_input_files <- function(iso3_current, naomi_data_path) {
   files <- lapply(paths, function(paths) {
 
     files <- list.files(paths, full.names = TRUE)
-    area <- files %>% str_subset(pattern = "areas.geojson") %>% str_subset(pattern = ".zip", negate=TRUE)
+    area <- files %>%
+      stringr::str_subset(pattern = "areas.geojson") %>%
+      stringr::str_subset(pattern = ".zip", negate = TRUE)
 
     if(population) {
-      pop <- files %>% str_subset(pattern = "population")
+      pop <- files %>%
+        stringr::str_subset(pattern = "population")
       files <- c(area, pop)
       names(files) <- c("areas", "population")
     } else {
@@ -49,38 +52,38 @@ get_areas <- function(iso3_current, naomi_data_path, full=FALSE, wide=TRUE) {
   areas <- list()
 
   areas$areas_long <- lapply(files, "[[", "areas") %>%
-    lapply(read_sf) %>%
+    lapply(sf::read_sf) %>%
     lapply(function(x) {
 
       iso3_code <- x %>%
-        filter(area_level == 0) %>%
-        select(area_id) %>%
-        unique %>%
+        dlpyr::filter(area_level == 0) %>%
+        dlpyr::select(area_id) %>%
+        unique() %>%
         .$area_id
 
       x <- x %>%
-        mutate(iso3 = iso3_code) %>%
-        st_drop_geometry() %>%
-        select(c("iso3", "area_id", "area_name", "area_level", "parent_area_id", "naomi_level"))
+        dplyr::mutate(iso3 = iso3_code) %>%
+        sf::st_drop_geometry() %>%
+        dplyr::select(c("iso3", "area_id", "area_name", "area_level", "parent_area_id", "naomi_level"))
 
       return(x)
     }) %>%
-    bind_rows %>%
-    arrange(iso3)
+    dplyr::bind_rows() %>%
+    dplyr::arrange(iso3)
 
   if(full)
     areas$areas_full <- lapply(files, "[[", "areas") %>%
       lapply(st_read) %>%
-      bind_rows %>%
-      arrange(iso3)
+      dplyr::bind_rows() %>%
+      dplyr::arrange(iso3)
 
   if(wide)
     areas$areas_wide <- lapply(files, "[[", "areas") %>%
-      lapply(read_sf) %>%
-      lapply(function(x) {spread_areas(as.data.frame(x))}) %>%
-      lapply(function(x) {x %>% mutate(iso3 = area_id0)}) %>%
-      bind_rows %>%
-      arrange(iso3)
+      lapply(sf::read_sf) %>%
+      lapply(function(x) {naomi::spread_areas(as.data.frame(x))}) %>%
+      lapply(function(x) {x %>% dplyr::mutate(iso3 = area_id0)}) %>%
+      dplyr::bind_rows() %>%
+      dplyr::arrange(iso3)
 
   return(areas)
 
@@ -97,12 +100,12 @@ get_populations <- function(iso3_current, naomi_data_path) {
   files <- get_input_files(iso3_current, naomi_data_path)
 
   area_population <- lapply(files, "[[", "population") %>%
-    lapply(read_csv) %>%
-    lapply(left_join, areas_long) %>%
-    bind_rows %>%
-    mutate(period = year_labels(naomi:::calendar_quarter_to_quarter_id(calendar_quarter))) %>%
-    select(iso3, "area_id" , "area_name", "source", "sex", "age_group", "population", "period") %>%
-    arrange(iso3)
+    lapply(readr::read_csv) %>%
+    lapply(dplyr::left_join, areas_long) %>%
+    dlpyr::bind_rows() %>%
+    dlpyr::mutate(period = year_labels(naomi:::calendar_quarter_to_quarter_id(calendar_quarter))) %>%
+    dlpyr::select(iso3, "area_id" , "area_name", "source", "sex", "age_group", "population", "period") %>%
+    dlpyr::arrange(iso3)
 }
 
 #' Get populations
@@ -116,21 +119,21 @@ get_boundaries <- function(iso3_current, naomi_data_path) {
   files <- get_input_files(iso3_current, naomi_data_path)
 
   area_boundaries <- lapply(files, "[[", "areas") %>%
-    lapply(read_sf) %>%
+    lapply(sf::read_sf) %>%
     lapply(function(x) {
 
       iso3_code <- x %>%
-        filter(area_level == 0) %>%
-        select(area_id) %>%
-        unique %>%
+        dplyr::filter(area_level == 0) %>%
+        dplyr::select(area_id) %>%
+        unique() %>%
         .$area_id
 
       x <- x %>%
-        mutate(iso3 = iso3_code) %>%
-        select(-epp_level)
+        dplyr::mutate(iso3 = iso3_code) %>%
+        dplyr::select(-epp_level)
 
       return(x)
     }) %>%
-    bind_rows %>%
-    arrange(iso3)
+    dplyr::bind_rows() %>%
+    dplyr::arrange(iso3)
 }
