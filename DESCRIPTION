@@ -31,7 +31,10 @@ Imports:
     spdep,
     tidyr,
     zip,
-    zoo
+    zoo,
+    methods,
+    utils,
+    rlang
 Suggests: 
     tidyverse
 LinkingTo: 
