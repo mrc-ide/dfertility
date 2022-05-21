@@ -10,7 +10,7 @@ create_surveys_mics <- function(iso3, mics_indicators) {
   mics_file_names <- folder$list() %>%
     dplyr::filter(str_detect(name, tolower(iso3))) %>%
     .$name %>%
-    sort
+    sort()
 
   mics_survey_names <- toupper(stringr::str_replace(mics_file_names, ".rds", ""))
 
@@ -30,7 +30,7 @@ create_surveys_mics <- function(iso3, mics_indicators) {
 
   paths <- file.path("sites", Sys.getenv("SHAREPOINT_SITE"), Sys.getenv("MICS_ORDERLY_PATH"), mics_file_names)
 
-  files <- lapply(paths, sharepoint_download, sharepoint_url = Sys.getenv("SHAREPOINT_URL"))
+  files <- lapply(paths, spud::sharepoint_download, sharepoint_url = Sys.getenv("SHAREPOINT_URL"))
 
   mics_dat <- lapply(files, readRDS)
 
@@ -50,7 +50,7 @@ create_surveys_mics <- function(iso3, mics_indicators) {
     dplyr::filter(survey_id %in% mics_survey_names) %>%
     dplyr::distinct(survey_id) %>%
     .$survey_id %>%
-    sort
+    sort()
 
   return(mics_dat)
 
