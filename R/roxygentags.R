@@ -8,7 +8,7 @@
 #' @useDynLib model7_mwi
 #' @useDynLib model7_rwa
 #' @useDynLib model7_zwe
-#' @useDynLib model7_sd_caf
+#' @useDynLib model7_ssd_caf
 #'
 #' @noRd
 #' @keywords internal
