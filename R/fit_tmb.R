@@ -1,17 +1,15 @@
 #' Fit TMB model
 #'
 #' @export
-#'
-#'
 
 fit_sample_tmb <- function(data, par, random) {
-  obj <-  MakeADFun(data = data,
+  obj <-  TMB::MakeADFun(data = data,
                     parameters = par,
                     DLL = "dfertility",
                     random = random,
                     hessian = FALSE)
 
-  f <- nlminb(obj$par, obj$fn, obj$gr)
+  f <- stats::nlminb(obj$par, obj$fn, obj$gr)
   f$par.fixed <- f$par
   f$par.full <- obj$env$last.par
 
@@ -19,13 +17,11 @@ fit_sample_tmb <- function(data, par, random) {
   # fit$sdreport <- sdreport(fit$obj, fit$par)
 
   class(fit) <- "naomi_fit"  # this is hacky...
-  fit <- sample_tmb(fit, random_only=TRUE)
+  fit <-  naomi::sample_tmb(fit, random_only = TRUE)
   return(fit)
 }
 
 #' Sample TMB
-#'
-
 sample_tmb <- function (fit, nsample = 1000, rng_seed = NULL, random_only = TRUE,
           verbose = FALSE)
 {
@@ -48,7 +44,7 @@ sample_tmb <- function (fit, nsample = 1000, rng_seed = NULL, random_only = TRUE
     par_f <- fit$par.full[-r]
     par_r <- fit$par.full[r]
     hess_r <- fit$obj$env$spHess(fit$par.full, random = TRUE)
-    smp_r <- rmvnorm_sparseprec(nsample, par_r, hess_r)
+    smp_r <-  rmvnorm_sparseprec(nsample, par_r, hess_r)
     smp <- matrix(0, nsample, length(fit$par.full))
     smp[, r] <- smp_r
     smp[, -r] <- matrix(par_f, nsample, length(par_f), byrow = TRUE)
