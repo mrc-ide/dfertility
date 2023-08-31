@@ -408,7 +408,7 @@ make_model_frames_dev <- function(iso3_c,
   Z$X_period <- methods::as(Matrix::as.matrix(mf_model$id.period), "dgTMatrix")
   
   
-  if(iso3 == "ZWE") {
+  if(iso3_c == "ZWE") {
     
     mf$mf_model <- mf$mf_model %>% 
       mutate(spike_2010 = factor(ifelse(period %in% 2010:2011, id.period-14, 0))) %>%
