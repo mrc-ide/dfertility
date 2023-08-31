@@ -154,8 +154,13 @@ make_model_frames_dev <- function(iso3,
 
   areas <- dplyr::filter(areas, area_level <= naomi_level)
 
-  area_tree <- naomi::create_areas(area_merged = areas)
-  area_aggregation <- naomi::create_area_aggregation(areas$area_id[areas$area_level == naomi_level], area_tree)
+  if(naomi_level != 0) {
+    area_tree <- naomi::create_areas(area_merged = areas %>% mutate(display = T))
+    area_aggregation <- naomi::create_area_aggregation(areas$area_id[areas$area_level == naomi_level], area_tree)
+  } else {
+    area_aggregation <- data.frame(area_id = iso3_c,
+                                   model_area_id = iso3_c)
+  }
 
   mf_model <- tidyr::crossing(period = 1995:project,
                        age_group = unique(asfr$age_group),
@@ -204,37 +209,44 @@ make_model_frames_dev <- function(iso3,
     )
 
 
-  naomi_level_obs <- obs %>%
+  naomi_level_obs <- obs %>% 
     dplyr::filter(area_level == naomi_level) %>%
     dplyr::mutate(
-           area_id = factor(area_id, levels(mf_model$area_id))
+      area_id = factor(area_id, levels(mf_model$area_id))
     ) %>%
     dplyr::left_join(mf_model %>% dplyr::select(area_id, age_group, period, idx))
-
-  aggregate_mf <- tidyr::crossing(area_id = area_aggregation$area_id,
-                         period = unique(mf_model$period),
-                         age_group = unique(mf_model$age_group)
-  ) %>%
-    dplyr::arrange(area_id, age_group, period) %>%
-    dplyr::mutate(idx_row = factor(dplyr::row_number()))
-
-  join <- aggregate_mf %>%
-    dplyr::left_join(area_aggregation, by = "area_id") %>%
-    dplyr::left_join(mf_model, by = c("age_group", "period", "model_area_id" = "area_id")) %>%
-    dplyr::mutate(x = 1) %>%
-    utils::type.convert()
-
-  full_obs <- obs %>%
-    dplyr::left_join(aggregate_mf, by=c("area_id", "age_group", "period")) %>%
-    dplyr::rename(idx = idx_row)
-
-  A_full_obs <- Matrix::sparseMatrix(
-    i = join$idx_row,
-    j = join$idx,
-    x = join$x,
-    dims = c(max(join$idx_row), nrow(mf_model)),
-    use.last.ij = TRUE
-  )
+  
+  # naomi_level_obs <- obs %>%
+  #   dplyr::filter(area_level == naomi_level) %>%
+  #   dplyr::mutate(
+  #          area_id = factor(area_id, levels(mf_model$area_id))
+  #   ) %>%
+  #   dplyr::left_join(mf_model %>% dplyr::select(area_id, age_group, period, idx))
+    
+    aggregate_mf <- tidyr::crossing(area_id = area_aggregation$area_id,
+                                    period = unique(mf_model$period),
+                                    age_group = unique(mf_model$age_group)
+    ) %>%
+      dplyr::arrange(area_id, age_group, period) %>%
+      dplyr::mutate(idx_row = factor(dplyr::row_number()))
+    
+    join <- aggregate_mf %>%
+      dplyr::left_join(area_aggregation, by = "area_id") %>%
+      dplyr::left_join(mf_model, by = c("age_group", "period", "model_area_id" = "area_id")) %>%
+      dplyr::mutate(x = 1) %>%
+      utils::type.convert()
+    
+    full_obs <- obs %>%
+      dplyr::left_join(aggregate_mf, by=c("area_id", "age_group", "period")) %>%
+      dplyr::rename(idx = idx_row)
+    
+    A_full_obs <- Matrix::sparseMatrix(
+      i = join$idx_row,
+      j = join$idx,
+      x = join$x,
+      dims = c(max(join$idx_row), nrow(mf_model)),
+      use.last.ij = TRUE
+    )
 
   mf <- list()
   mf$mf_model <- mf_model
@@ -314,7 +326,7 @@ make_model_frames_dev <- function(iso3,
   M_full_obs <- Matrix::sparse.model.matrix(~0 + idx, mf$observations$full_obs)
 
   Z <- list()
-  Z$Z_spatial <- Matrix::sparse.model.matrix(~0 + area_id, mf$mf_model)
+  Z$Z_spatial <- if(naomi_level != 0) Matrix::sparse.model.matrix(~0 + area_id, mf$mf_model) else Matrix::sparse.model.matrix(~0)
   Z$Z_age <- Matrix::sparse.model.matrix(~0 + age_group, mf$mf_model)
   Z$Z_period <- Matrix::sparse.model.matrix(~0 + period, mf$mf_model)
   Z$Z_country <- methods::as(matrix(rep(1, nrow(mf$mf_model)), ncol = 1), "dgCMatrix")
@@ -322,10 +334,10 @@ make_model_frames_dev <- function(iso3,
   # Z$Z_tips <- sparse.model.matrix(~0 + tips_f, mf$observations$full_obs)
   Z$Z_tips_dhs <- Matrix::sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
   Z$Z_tips_ais <- Matrix::sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% dplyr::filter(survtype %in% c("AIS", "MIS")))
-  Z$X_tips_dummy <- Matrix::model.matrix(~0 + tips_dummy, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
-  Z$X_tips_dummy_10 <- Matrix::model.matrix(~0 + tips_dummy_10, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
-  Z$X_tips_dummy_9_11 <- Matrix::model.matrix(~0 + tips_dummy_9_11, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
-  Z$X_urban_dummy <- Matrix::model.matrix(~0 + urban, mf$mf_model)
+  Z$X_tips_dummy <- model.matrix(~0 + tips_dummy, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
+  Z$X_tips_dummy_10 <- model.matrix(~0 + tips_dummy_10, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
+  Z$X_tips_dummy_9_11 <- model.matrix(~0 + tips_dummy_9_11, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
+  Z$X_urban_dummy <- model.matrix(~0 + urban, mf$mf_model)
   Z$X_period <- methods::as(Matrix::as.matrix(mf_model$id.period), "dgTMatrix")
 
   ais_join <- mf$observations$full_obs %>%
@@ -393,7 +405,7 @@ make_model_frames_dev <- function(iso3,
   X_extract$X_extract_phia <- X_extract_phia
 
   R <- list()
-  R$R_spatial <- make_adjacency_matrix(areas, naomi_level)
+  R$R_spatial <- if(naomi_level != 0) make_adjacency_matrix(areas, naomi_level) else Matrix::sparse.model.matrix(~0)
   R$R_tips <- make_rw_structure_matrix(ncol(Z$Z_tips_dhs), 1, adjust_diagonal = TRUE)
   R$R_age <- make_rw_structure_matrix(ncol(Z$Z_age), 1, adjust_diagonal = TRUE)
   R$R_period <- make_rw_structure_matrix(ncol(Z$Z_period), 2, adjust_diagonal = TRUE)
@@ -780,6 +792,301 @@ validate_model_frame <- function(mf, areas) {
 
 }
 
+make_tmb_inputs <- function(iso3, mf, naomi_level) {
+  
+  tmb_int <- list()
+  
+  tmb_int$data <- list(
+    M_naomi_obs = mf$M_naomi_obs,
+    M_full_obs = mf$M_full_obs,
+    X_tips_dummy = mf$Z$X_tips_dummy,
+    X_tips_dummy_9_11 = mf$Z$X_tips_dummy_9_11,
+    X_tips_dummy_5 = mf$Z$X_tips_dummy_5,
+    X_tips_fe = mf$Z$X_tips_fe,
+    X_period = mf$Z$X_period,
+    X_urban_dummy = mf$Z$X_urban_dummy,
+    X_extract_dhs = mf$X_extract$X_extract_dhs,
+    X_extract_ais = mf$X_extract$X_extract_ais,
+    X_extract_mics = mf$X_extract$X_extract_mics,
+    X_extract_phia = mf$X_extract$X_extract_phia,
+    Z_tips = sparse.model.matrix(~0 + tips_f, mf$observations$full_obs),
+    # Z_tips_dhs = mf$Z$Z_tips_dhs,
+    # Z_tips_ais = mf$Z$Z_tips_ais,
+    Z_age = mf$Z$Z_age,
+    Z_period = mf$Z$Z_period,
+    Z_spatial = mf$Z$Z_spatial,
+    # Z_interaction1 = sparse.model.matrix(~0 + id.interaction1, mf$mf_model),
+    # Z_interaction2 = sparse.model.matrix(~0 + id.interaction2, mf$mf_model),
+    # Z_interaction3 = sparse.model.matrix(~0 + id.interaction3, mf$mf_model),
+    Z_interaction1 = mgcv::tensor.prod.model.matrix(list(mf$Z$Z_age, mf$Z$Z_period, mf$Z$Z_country)),
+    Z_interaction2 = mgcv::tensor.prod.model.matrix(list(mf$Z$Z_spatial, mf$Z$Z_period)),
+    Z_interaction3 = mgcv::tensor.prod.model.matrix(list(mf$Z$Z_spatial, mf$Z$Z_age)),
+    Z_country = mf$Z$Z_country,
+    # Z_omega1 = sparse.model.matrix(~0 + id.omega1, mf$mf_model),
+    # Z_omega2 = sparse.model.matrix(~0 + id.omega2, mf$mf_model),
+    Z_smooth_iid = sparse.model.matrix(~0 + id.smooth, mf$observations$full_obs),
+    # Z_smooth_iid_ais = sparse.model.matrix(~0 + id.smooth, mf$observations$full_obs %>% filter(survtype %in% c("AIS", "MIS"))),
+    R_smooth_iid = R_smooth_iid,
+    R_tips = mf$R$R_tips,
+    R_tips_iid = as(diag(1, ncol(mf$Z$Z_tips_dhs)), "dgTMatrix"),
+    # Z_zeta1 = sparse.model.matrix(~0 + id.zeta1, mf$observations$full_obs),
+    Z_zeta2 = mf$Z$Z_zeta2,
+    R_zeta2 = as(diag(1, ncol(mf$Z$X_tips_fe)), "dgTMatrix"),
+    R_survey = as(diag(1, length(unique(mf$observations$full_obs$survey_id))), "dgTMatrix"),
+    R_age = mf$R$R_age,
+    # R_period = make_rw_structure_matrix(ncol(mf$Z$Z_period), 1, adjust_diagonal = TRUE),
+    R_period = make_rw_structure_matrix(ncol(spline_mat), 1, adjust_diagonal = TRUE),
+    # R_spline_mat = spline_mat,
+    R_spatial = mf$R$R_spatial,
+    R_spatial_iid = mf$R$R_spatial_iid,
+    R_country = mf$R$R_country,
+    rankdef_R_spatial = 1,
+    
+    log_offset_naomi = log(mf$observations$naomi_level_obs$pys),
+    births_obs_naomi = mf$observations$naomi_level_obs$births,
+    
+    log_offset_dhs = log(filter(mf$observations$full_obs, survtype == "DHS")$pys),
+    births_obs_dhs = filter(mf$observations$full_obs, survtype == "DHS")$births,
+    
+    log_offset_ais = log(filter(mf$observations$full_obs, survtype %in% c("AIS", "MIS"))$pys),
+    births_obs_ais = filter(mf$observations$full_obs, survtype %in% c("AIS", "MIS"))$births,
+    
+    log_offset_phia = log(filter(mf$observations$full_obs, survtype == "PHIA")$pys),
+    births_obs_phia = filter(mf$observations$full_obs, survtype == "PHIA")$births,
+    
+    pop = mf$mf_model$population,
+    # A_asfr_out = mf$out$A_asfr_out,
+    A_tfr_out = mf$out$A_tfr_out,
+    
+    A_full_obs = mf$observations$A_full_obs,
+    
+    mics_toggle = mf$mics_toggle,
+    spatial_toggle = as.integer(naomi_level > 0),
+    
+    X_spike_2010 = mf$Z$X_spike_2010,
+    
+    X_spike_2000 = model.matrix(~0 + spike_2000, mf$observations$full_obs),
+    X_spike_1999 = model.matrix(~0 + spike_1999, mf$observations$full_obs),
+    X_spike_2001 = model.matrix(~0 + spike_2001, mf$observations$full_obs)
+  )
+  
+  tmb_int$par <- list(
+    beta_0 = 0,
+    
+    # beta_tips_dummy = rep(0, ncol(mf$Z$X_tips_dummy)),
+    beta_tips_dummy_5 = rep(0, ncol(mf$Z$X_tips_dummy_5)),
+    beta_tips_fe = rep(0, ncol(mf$Z$X_tips_fe)),
+    # beta_urban_dummy = rep(0, ncol(mf$Z$X_urban_dummy)),
+    
+    u_age = rep(0, ncol(mf$Z$Z_age)),
+    log_prec_rw_age = 0,
+    lag_logit_phi_age = 0,
+    
+    # zeta1 = array(0, c(length(unique(mf$observations$full_obs$survey_id)), ncol(mf$Z$Z_tips_dhs))),
+    # log_prec_zeta1 = 0,
+    # lag_logit_zeta1_phi_tips = 0,
+    
+    # u_country = rep(0, ncol(mf$Z$Z_country)),
+    # log_prec_country = 0,
+    
+    # omega1 = array(0, c(ncol(mf$R$R_country), ncol(mf$Z$Z_age))),
+    # log_prec_omega1 = 0,
+    # lag_logit_omega1_phi_age = 0,
+    #
+    # omega2 = array(0, c(ncol(mf$R$R_country), ncol(mf$Z$Z_period))),
+    # log_prec_omega2 = 0,
+    # lag_logit_omega2_phi_period = 0,
+    
+    # u_period = rep(0, ncol(mf$Z$Z_period)),
+    u_period = rep(0, ncol(spline_mat)),
+    log_prec_rw_period = 0,
+    # logit_phi_period = 0,
+    lag_logit_phi_period = 0,
+    # lag_logit_phi_arima_period = 0,
+    # beta_period = 0,
+    
+    log_prec_smooth_iid = 0,
+    u_smooth_iid = rep(0, ncol(R_smooth_iid)),
+    
+    # log_overdispersion = 0,
+    
+    eta1 = array(0, c(ncol(mf$Z$Z_country), ncol(mf$Z$Z_period), ncol(mf$Z$Z_age))),
+    log_prec_eta1 = 0,
+    logit_eta1_phi_age = 0,
+    logit_eta1_phi_period = 0
+  )
+  
+  tmb_int$random <- c("beta_0",
+                      "u_age",
+                      "u_period",
+                      "u_smooth_iid",
+                      # "beta_period",
+                      "beta_tips_dummy_5",
+                      "beta_tips_fe",
+                      "eta1"
+  )
+  
+  if(naomi_level != 0) {
+    tmb_int$par <- c(tmb_int$par,
+                     "u_spatial_str" = rep(0, ncol(mf$Z$Z_spatial)),
+                     "log_prec_spatial" = 0,
+                     
+                     "eta2" = array(0, c(ncol(mf$Z$Z_spatial), ncol(mf$Z$Z_period))),
+                     "log_prec_eta2" = 0,
+                     "logit_eta2_phi_period" = 0,
+                     # #
+                     "eta3" = array(0, c(ncol(mf$Z$Z_spatial), ncol(mf$Z$Z_age))),
+                     "log_prec_eta3" = 0,
+                     "logit_eta3_phi_age" = 0)
+    
+    tmb_int$random <- c(tmb_int$random,
+                        "u_spatial_str",
+                        "eta2",
+                        "eta3")
+  }
+  
+  if(mf$mics_toggle) {
+    tmb_int$data <- c(tmb_int$data,
+                      "Z_tips_mics" = mf$Z$Z_tips_mics,
+                      "R_tips_mics" = mf$R$R_tips_mics,
+                      "log_offset_mics" = list(log(filter(mf$observations$full_obs, survtype == "MICS")$pys)),
+                      "births_obs_mics" = list(filter(mf$observations$full_obs, survtype == "MICS")$births)
+    )
+  }
+  
+  if(!iso3 %in% c("SSD", "CAF")) {
+    tmb_int$random <- c(tmb_int$random,
+                        "u_tips",
+                        "zeta2")
+    
+    tmb_int$par <- c(tmb_int$par,
+                     "u_tips" = list(rep(0, ncol(mf$Z$Z_tips_dhs))),
+                     "log_prec_rw_tips" = 0,
+                     "lag_logit_phi_tips" = 0,
+                     "zeta2" = list(array(0, c(ncol(as(diag(1, length(unique(mf$observations$full_obs$survey_id))), "dgTMatrix")),
+                                               ncol(mf$Z$X_tips_fe)
+                     )
+                     )),
+                     "log_prec_zeta2" = 0
+    )
+  }
+  
+  if(!iso3 %in% c("MWI", "RWA")) {
+    tmb_int$par <- c(tmb_int$par,
+                     "beta_spike_2000" = 0,
+                     "beta_spike_1999" = 0,
+                     "beta_spike_2001" = 0
+    )
+    
+    tmb_int$random <- c(tmb_int$random,
+                        # "u_tips",
+                        # "zeta2",
+                        "beta_spike_2000",
+                        "beta_spike_1999",
+                        "beta_spike_2001")
+    
+  }
+  
+  if(iso3 == "ETH") {
+    tmb_int$par <- c(tmb_int$par,
+                     "beta_urban_dummy" = 0
+    )
+    
+    tmb_int$random <- c(tmb_int$random,                     
+                        "beta_urban_dummy")
+  } 
+  
+  if(iso3 == "ZWE") {
+    
+    tmb_int$data <- c(tmb_int$data,
+                      "R_iota1" = list(as(diag(1, nrow=10), "dgTMatrix")),
+                      "Z_iota1" = list(mf$Z$iota1),
+                      "R_2010_spike" = list(as(diag(1, nrow=2), "dgTMatrix"))
+    )
+    
+    tmb_int$par <- c(tmb_int$par,
+                     "beta_spike_2010" = list(rep(0, ncol(mf$Z$X_spike_2010))),
+                     "log_prec_iota1" = 0,
+                     "iota1" = list(array(0, c(2, 10)))
+    )
+    
+    tmb_int$random <- c(tmb_int$random,                     
+                        "beta_spike_2010",
+                        "iota1")
+    
+  } 
+  
+  if(iso3 == "MWI") {
+    
+    mf$mf_model <- mf$mf_model %>% 
+      mutate(spike_famine = factor(ifelse(period %in% 2001:2002, id.period-5, 0)))
+    
+    mf$Z$X_spike_famine <- sparse.model.matrix(~0 + spike_famine, mf$mf_model)[,2:3]
+    
+    tmb_int$par <- c(tmb_int$par,
+                     "beta_spike_famine" = list(c(0,0))
+    )
+    
+    tmb_int$data <- c(tmb_int$data, 
+                      "X_spike_famine" = list(mf$Z$X_spike_famine)
+    )
+  }
+  
+  tmb_int
+}
+
+make_tmb_obj <- function(iso3, tmb_int) {
+  
+  if(iso3 == "ETH") {
+    
+    obj <-  TMB::MakeADFun(data = tmb_int$data,
+                           parameters = tmb_int$par,
+                           DLL = "model7_eth",
+                           random = tmb_int$random,
+                           hessian = FALSE)
+    
+  } else if(iso3 == "ZWE") {
+    
+    obj <-  TMB::MakeADFun(data = tmb_int$data,
+                           parameters = tmb_int$par,
+                           DLL = "model7_zwe",
+                           random = tmb_int$random,
+                           hessian = FALSE)
+    
+  } else if(iso3 == "MWI") {
+    
+    obj <-  TMB::MakeADFun(data = tmb_int$data,
+                           parameters = tmb_int$par,
+                           DLL = "model7_mwi",
+                           random = tmb_int$random,
+                           hessian = FALSE)
+    
+  } else if(iso3 == "RWA") {
+    
+    obj <-  TMB::MakeADFun(data = tmb_int$data,
+                           parameters = tmb_int$par,
+                           DLL = "model7_rwa",
+                           random = tmb_int$random,
+                           hessian = FALSE)
+    
+  } else if(iso3 %in% c("SSD", "CAF")) {
+    
+    obj <-  TMB::MakeADFun(data = tmb_int$data,
+                           parameters = tmb_int$par,
+                           DLL = "model7_ssd_caf",
+                           random = tmb_int$random,
+                           hessian = FALSE)
+  } else {
+    
+    obj <-  TMB::MakeADFun(data = tmb_int$data,
+                           parameters = tmb_int$par,
+                           DLL = "model7",
+                           random = tmb_int$random,
+                           hessian = FALSE)
+    
+  }
+}
+
 
 tmb_outputs <- function(fit, mf, areas) {
 
@@ -793,7 +1100,7 @@ tmb_outputs <- function(fit, mf, areas) {
                   median = c(asfr_qtls[2,], tfr_qtls[2,]),
                   upper = c(asfr_qtls[3,], tfr_qtls[3,]),
                   source = "tmb") %>%
-    utils::type.convert() %>%
+    utils::type.convert(as.is=T) %>%
     dplyr::left_join(areas_long)
 
   return(tmb_results)

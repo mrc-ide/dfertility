@@ -464,7 +464,7 @@ Type objective_function<Type>::operator() ()
   // REPORT(eta2);
   // REPORT(eta3);
 
-  // REPORT(beta_0);
+  REPORT(beta_0);
 
   // Posterior predictive checks
   // REPORT(mu_obs_pred_ais);
