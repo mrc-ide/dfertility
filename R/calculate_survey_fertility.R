@@ -366,7 +366,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women, mappin
 
 #' Calculate fertility rates from DHS, MIS, AIS data
 #' @export
-calculate_dhs_fertility <- function(iso3, dat, mapping) {
+calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
 
   mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
 
