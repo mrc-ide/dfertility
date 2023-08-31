@@ -366,20 +366,25 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women) {
 
 #' Calculate fertility rates from DHS, MIS, AIS data
 #' @export
-calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
+calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide, mapping) {
 
   mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
 
-  cluster_list <- clusters %>%
+  # cluster_list <- clusters %>%
+  #   dplyr::rename(area_id = geoloc_area_id) %>%
+  #   left_join(areas_wide) %>%
+  #   dplyr::group_by(survey_id) %>%
+  #   dplyr::group_split()
+  
+  clusters <- clusters %>%
     dplyr::rename(area_id = geoloc_area_id) %>%
-    dplyr::group_by(survey_id) %>%
-    dplyr::group_split()
+    left_join(areas_wide)
 
-  names(cluster_list) <- surveys$survey_id
+  # names(cluster_list) <- surveys$survey_id
 
   ir <- get_fertility_surveys(surveys)
-  names(ir$ir) <- names(cluster_list)
-  names(ir$nrow_ir) <- names(cluster_list)
+  # names(ir$ir) <- names(cluster_list)
+  # names(ir$nrow_ir) <- names(cluster_list)
 
   if(iso3 == 'ETH') {
 
@@ -394,143 +399,199 @@ calculate_dhs_fertility <- function(iso3, surveys, clusters, areas_wide) {
 
   }
 
-  dat <- map_ir_to_areas(ir$ir, cluster_list)
+  # dat <- map_ir_to_areas(ir$ir, cluster_list)
+  
+  dat <- lapply(ir$ir, function(x) left_join(x, clusters, by = c("v001" = "cluster_id", "surveyid" = "survey_id")))
 
-  cluster_level <- clusters %>%
-    dplyr::filter(!is.na(geoloc_area_id)) %>%
-    tidyr::separate(geoloc_area_id, into = c(NA, "area_level", NA), sep = c(4,5), remove = FALSE, convert = TRUE) %>%
-    dplyr::mutate(area_level = ifelse(geoloc_area_id == iso3, 0, area_level)) %>%
-    dplyr::group_by(area_level) %>%
-    dplyr::group_split()
-
-  get_admin1_clusters <- function(cluster_level) {
-    lvl <- unique(cluster_level$area_level)
-
-    if(lvl > 1) {
-      cluster_level %>%
-        dplyr::left_join(areas_wide %>%
-                    sf::st_drop_geometry() %>%
-                    dplyr::select(area_id1, paste0("area_id", lvl)) %>%
-                    dplyr::distinct(),
-                  by = c("geoloc_area_id" = paste0("area_id", lvl))) %>%
-        dplyr::rename(area_id = area_id1) %>%
-        dplyr::select(survey_id, cluster_id, area_id)
-    } else {
-      cluster_level %>%
-        dplyr::rename(area_id = geoloc_area_id) %>%
-        dplyr::select(survey_id, cluster_id, area_id)
+  # cluster_level <- clusters %>%
+  #   dplyr::filter(!is.na(geoloc_area_id)) %>%
+  #   tidyr::separate(geoloc_area_id, into = c(NA, "area_level", NA), sep = c(4,5), remove = FALSE, convert = TRUE) %>%
+  #   dplyr::mutate(area_level = ifelse(geoloc_area_id == iso3, 0, area_level)) %>%
+  #   dplyr::group_by(area_level) %>%
+  #   dplyr::group_split()
+  # 
+  # get_admin1_clusters <- function(cluster_level) {
+  #   lvl <- unique(cluster_level$area_level)
+  # 
+  #   if(lvl > 1) {
+  #     cluster_level %>%
+  #       dplyr::left_join(areas_wide %>%
+  #                   sf::st_drop_geometry() %>%
+  #                   dplyr::select(area_id1, paste0("area_id", lvl)) %>%
+  #                   dplyr::distinct(),
+  #                 by = c("geoloc_area_id" = paste0("area_id", lvl))) %>%
+  #       dplyr::rename(area_id = area_id1) %>%
+  #       dplyr::select(survey_id, cluster_id, area_id)
+  #   } else {
+  #     cluster_level %>%
+  #       dplyr::rename(area_id = geoloc_area_id) %>%
+  #       dplyr::select(survey_id, cluster_id, area_id)
+  #   }
+  # }
+  # 
+  # cluster_list_admin1 <- lapply(cluster_level, get_admin1_clusters) %>%
+  #   dplyr::bind_rows() %>%
+  #   dplyr::ungroup() %>%
+  #   dplyr::group_by(survey_id) %>%
+  #   dplyr::group_split()
+  # 
+  # names(cluster_list_admin1) <- surveys$survey_id
+  # 
+  # dat_admin1 <- map_ir_to_areas(ir$ir, cluster_list_admin1, single_tips = FALSE)
+  # dat_admin1$ir <- lapply(dat_admin1$ir, zap_labels)
+  # 
+  # message("Calculating district-level ASFR")
+  
+  levels <- c(0, 
+              mapping$admin1_level[mapping$iso3 == iso3_c],
+              mapping$fertility_fit_level[mapping$iso3 == iso3_c])
+  
+  calculate_fr <- function(level, dat) {
+    area <- paste0("area_id", level)
+    message(area)
+    
+    dat <- lapply(dat, function(x) {
+      if(level == 0) {
+        x %>%
+          mutate(curr_area_id = iso3_c)
+      } else {
+        x <- x %>%
+          rename_with(~"curr_area_id", paste(area)) %>%
+          mutate(curr_area_id = ifelse(is.na(curr_area_id), area_id, curr_area_id)) %>%
+          group_by(curr_area_id) %>%
+          group_split()
+      }
+    })
+    
+    if(level != 0) {
+      dat <- unlist(dat, recursive = F)
     }
+    
+    asfr <- parallel::mcMap(calc_asfr, 
+                            # dat$ir,
+                            dat,
+                            by = list(~surveyid + survtype + survyear + curr_area_id),
+                            tips = list(c(0:15)),
+                            agegr= list(3:10*5),
+                            period = list(1995:2022),
+                            strata = list(NULL),
+                            varmethod = list("none"),
+                            counts = TRUE,
+                            mc.cores = mc.cores) %>%
+      dplyr::bind_rows() %>%
+      utils::type.convert(as.is = T) %>%
+      dplyr::filter(period <= survyear) %>%
+      # rename(age_group = agegr) %>%
+      dplyr::mutate(iso3 = iso3) %>%
+      dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
+      dplyr::select(-agegr)
+    
+    if(length(grep(c(levels[[1]]|levels[[2]]), level))) {
+      asfr_plot <- parallel::mcMap(calc_asfr, 
+                                   dat,
+                                   by = list(~surveyid + survtype + survyear + curr_area_id),
+                                   tips = list(NULL),
+                                   agegr= list(3:10*5),
+                                   period = list(1995:2022),
+                                   strata = list(NULL),
+                                   varmethod = list("none"),
+                                   counts = TRUE,
+                                   mc.cores = mc.cores) %>%
+        dplyr::bind_rows() %>%
+        utils::type.convert(as.is = T) %>%
+        dplyr::filter(period <= survyear) %>%
+        # rename(age_group = agegr) %>%
+        dplyr::mutate(iso3 = iso3,
+                      variable = "asfr") %>%
+        dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
+        dplyr::select(-agegr, value = asfr)
+      
+      tfr_plot <- asfr_plot %>%
+        dplyr::group_by(surveyid, period, area_id) %>%
+        dplyr::summarise(value = 5 * sum(value),
+                         pys = sum(pys)) %>%
+        dplyr::mutate(variable = "tfr") %>%
+        dplyr::filter(value > 0.5)
+      
+      plot <- bind_rows(asfr_plot, tfr_plot) %>% 
+        rename(survey_id = surveyid)
+    } else {
+      plot <- data.frame()
+    }
+    
+    out <- list()
+    out$asfr <- asfr %>% rename(survey_id = surveyid)
+    out$plot <- plot 
+    out       
   }
+  
+  fr <- lapply(levels, calculate_fr, dat)
+  
+  names(fr) <- c("national", "provincial", "district")
 
-  cluster_list_admin1 <- lapply(cluster_level, get_admin1_clusters) %>%
-    dplyr::bind_rows() %>%
-    dplyr::ungroup() %>%
-    dplyr::group_by(survey_id) %>%
-    dplyr::group_split()
+  fr
+  # message("Calculating aggregate fertility rates")
+  # 
+  # 
+  # asfr_plot_nat <- Map(calc_asfr, ir$ir,
+  #                      # by = list(~survey_id + survtype + survyear + area_id),
+  #                      tips = list(c(0,15)),
+  #                      agegr= list(3:10*5),
+  #                      period = list(1995:2020),
+  #                      strata = list(NULL),
+  #                      varmethod = list("none"),
+  #                      counts = TRUE) %>%
+  #   dplyr::bind_rows(.id = "survey_id") %>%
+  #   tidyr::separate(survey_id, into = c(NA, "survyear", "survtype"), sep = c(3, 7), remove = FALSE, convert = TRUE) %>%
+  #   utils::type.convert() %>%
+  #   dplyr::filter(period<=survyear) %>%
+  #   dplyr::mutate(iso3 = iso3,
+  #          area_id = iso3,
+  #          variable = "asfr") %>%
+  #   dplyr::rename(value = asfr) %>%
+  #   dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
+  #   dplyr::select(-agegr)
+  # 
+  # tfr_plot <- asfr_plot %>%
+  #   dplyr::group_by(survey_id, period, area_id) %>%
+  #   dplyr::summarise(value = 5 * sum(value)) %>%
+  #   dplyr::mutate(variable = "tfr") %>%
+  #   dplyr::filter(value > 0.5)
+  # 
+  # tfr_plot_nat <- asfr_plot_nat %>%
+  #   dplyr::group_by(survey_id, period, area_id) %>%
+  #   dplyr::summarise(value = 5 * sum(value)) %>%
+  #   dplyr::mutate(variable = "tfr") %>%
+  #   dplyr::filter(value > 0.5)
 
-  names(cluster_list_admin1) <- surveys$survey_id
-
-  dat_admin1 <- map_ir_to_areas(ir$ir, cluster_list_admin1, single_tips = FALSE)
-  dat_admin1$ir <- lapply(dat_admin1$ir, zap_labels)
-
-  message("Calculating district-level ASFR")
-
-  asfr <- Map(calc_asfr, dat$ir,
-              by = list(~survey_id + survtype + survyear + area_id),
-              tips = list(c(0:15)),
-              agegr= list(3:10*5),
-              period = list(1995:2020),
-              strata = list(NULL),
-              varmethod = list("none"),
-              counts = TRUE) %>%
-    dplyr::bind_rows() %>%
-    utils::type.convert() %>%
-    dplyr::filter(period <= survyear) %>%
-    # rename(age_group = agegr) %>%
-    dplyr::mutate(iso3 = iso3) %>%
-    dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
-    dplyr::select(-agegr)
-
-  message("Calculating aggregate fertility rates")
-
-  asfr_plot <- Map(calc_asfr, dat_admin1$ir,
-                   by = list(~survey_id + survtype + survyear + area_id),
-                   tips = dat_admin1$tips_surv,
-                   agegr= list(3:10*5),
-                   period = list(1995:2020),
-                   strata = list(NULL),
-                   varmethod = list("none"),
-                   counts = TRUE) %>%
-    dplyr::bind_rows() %>%
-    utils::type.convert() %>%
-    dplyr::filter(period <= survyear) %>%
-    dplyr::mutate(iso3 = iso3,
-           variable = "asfr") %>%
-    dplyr::rename(value = asfr) %>%
-    dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
-    dplyr::select(-agegr)
-
-  asfr_plot_nat <- Map(calc_asfr, ir$ir,
-                       # by = list(~survey_id + survtype + survyear + area_id),
-                       tips = list(c(0,15)),
-                       agegr= list(3:10*5),
-                       period = list(1995:2020),
-                       strata = list(NULL),
-                       varmethod = list("none"),
-                       counts = TRUE) %>%
-    dplyr::bind_rows(.id = "survey_id") %>%
-    tidyr::separate(survey_id, into = c(NA, "survyear", "survtype"), sep = c(3, 7), remove = FALSE, convert = TRUE) %>%
-    utils::type.convert() %>%
-    dplyr::filter(period<=survyear) %>%
-    dplyr::mutate(iso3 = iso3,
-           area_id = iso3,
-           variable = "asfr") %>%
-    dplyr::rename(value = asfr) %>%
-    dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
-    dplyr::select(-agegr)
-
-  tfr_plot <- asfr_plot %>%
-    dplyr::group_by(survey_id, period, area_id) %>%
-    dplyr::summarise(value = 5 * sum(value)) %>%
-    dplyr::mutate(variable = "tfr") %>%
-    dplyr::filter(value > 0.5)
-
-  tfr_plot_nat <- asfr_plot_nat %>%
-    dplyr::group_by(survey_id, period, area_id) %>%
-    dplyr::summarise(value = 5 * sum(value)) %>%
-    dplyr::mutate(variable = "tfr") %>%
-    dplyr::filter(value > 0.5)
-
-  missing_data <- asfr %>%
-    dplyr::group_by(survey_id, tips) %>%
-    dplyr::summarise(births = sum(births)) %>%
-    dplyr::filter(births < 5) %>%
-    dplyr::group_by(survey_id) %>%
-    dplyr::group_split()
-
-  plot <- dplyr::bind_rows(tfr_plot, tfr_plot_nat, asfr_plot, asfr_plot_nat)
-
-  i <- 0
-
-  while(i < length(missing_data)) {
-    i <- i+1
-
-    asfr <- asfr %>%
-      dplyr::filter(!(survey_id == unique(missing_data[[i]]$survey_id) & tips %in% unique(missing_data[[i]]$tips)))
-
-    years <- unique(dplyr::filter(asfr, survey_id == unique(missing_data[[i]]$survey_id))$period)
-
-    plot <- plot %>%
-      dplyr::filter(!(survey_id == unique(missing_data[[i]]$survey_id) & !period %in% years))
-
-
-  }
-
-  out <- list()
-  out$asfr <- asfr
-  out$plot <- plot
-  out$nrow_ir <- ir$nrow_ir
-
-  out
+  # missing_data <- fr$national$asfr %>%
+  #   dplyr::group_by(survey_id, tips) %>%
+  #   dplyr::summarise(births = sum(births)) %>%
+  #   dplyr::filter(births < 5) %>%
+  #   dplyr::group_by(survey_id) %>%
+  #   dplyr::group_split()
+  # 
+  # # plot <- dplyr::bind_rows(tfr_plot, tfr_plot_nat, asfr_plot, asfr_plot_nat)
+  # 
+  # i <- 0
+  # 
+  # while(i < length(missing_data)) {
+  #   i <- i+1
+  # 
+  #   foo <- lapply(fr, "[[", "asfr") %>%
+  #     lapply(function(x) {
+  #       filter(x, !(survey_id == unique(missing_data[[i]]$survey_id) & tips %in% unique(missing_data[[i]]$tips)))
+  #     })
+  #   
+  #   # asfr <- asfr %>%
+  #   #   dplyr::filter(!(survey_id == unique(missing_data[[i]]$survey_id) & tips %in% unique(missing_data[[i]]$tips)))
+  # 
+  #   # years <- unique(dplyr::filter(asfr, survey_id == unique(missing_data[[i]]$survey_id))$period)
+  #   # 
+  #   # plot <- plot %>%
+  #   #   dplyr::filter(!(survey_id == unique(missing_data[[i]]$survey_id) & !period %in% years))
+  # 
+  # 
+  # }
 
 }
