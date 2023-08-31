@@ -486,6 +486,10 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
       dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
       dplyr::select(-agegr, area_id = curr_area_id)
     
+    filter_tips_df <- asfr %>%
+      distinct(survey_id, period) %>%
+      mutate(keep = T)
+    
     if(length(grep(paste(c(0, levels[[2]]), collapse = "|"), level))) {
       asfr_plot <- parallel::mcMap(calc_asfr, 
                                    dat,
@@ -513,7 +517,9 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
         dplyr::mutate(variable = "tfr") %>%
         dplyr::filter(value > 0.5)
       
-      plot <- bind_rows(asfr_plot, tfr_plot)
+      plot <- bind_rows(asfr_plot, tfr_plot) %>%
+        left_join(filter_tips_df) %>%
+        filter(!is.na(keep))
     } else {
       plot <- data.frame()
     }
