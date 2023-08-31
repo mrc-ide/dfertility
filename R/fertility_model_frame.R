@@ -324,21 +324,105 @@ make_model_frames_dev <- function(iso3_c,
 
   M_naomi_obs <- Matrix::sparse.model.matrix(~0 + idx, mf$observations$naomi_level_obs)
   M_full_obs <- Matrix::sparse.model.matrix(~0 + idx, mf$observations$full_obs)
-
+  
+  mf$observations$full_obs <- mf$observations$full_obs %>%
+    ungroup() %>%
+    mutate(id.smooth = factor(row_number()))
+  
+  mf$observations$full_obs <- mf$observations$full_obs %>%
+    mutate(tips_dummy_5 = as.integer(tips %in% 5),
+           tips_dummy_6 = as.integer(tips %in% 6),
+           tips_dummy_7 = as.integer(tips %in% 7),
+           tips_dummy_8 = as.integer(tips %in% 8),
+           tips_dummy_0 = as.integer(tips %in% 0),
+           tips_fe = factor(case_when(
+             tips == 0 ~ 1,
+             tips == 6 & survtype == "DHS" ~ 2,
+             tips == 10 ~ 3,
+             TRUE ~ 0
+           ))
+    ) %>%
+    ungroup()
+  
+  if(iso3_c %in% c("CAF", "GNB", "SSD")) {
+    
+    zeta2_combinations <- length(unique(mf$observations$full_obs$survey_id))*3
+    
+    mf$observations$full_obs <- mf$observations$full_obs %>%
+      group_by(tips_fe, survey_id) %>%
+      mutate(
+        id.zeta2 = as.character(cur_group_id()),
+        id.zeta2 = fct_expand(id.zeta2, as.character(1:zeta2_combinations))) %>%
+      ungroup()
+  } else {
+    
+    zeta2_combinations <- length(unique(mf$observations$full_obs$survey_id))*4
+    
+    mf$observations$full_obs <- mf$observations$full_obs %>%
+      group_by(tips_fe, survey_id) %>%
+      mutate(
+        id.zeta2 = as.character(cur_group_id()),
+        id.zeta2 = fct_expand(id.zeta2, as.character(1:zeta2_combinations))) %>%
+      ungroup()
+  }
+  
+  mf$observations$full_obs <- mf$observations$full_obs %>%
+    ungroup() %>%
+    group_by(tips, survey_id) %>%
+    mutate(id.zeta1 = factor(cur_group_id()),
+           id.zeta1 = fct_expand(id.zeta1, as.character(1:(length(unique(mf$observations$full_obs$survey_id))*15)))) %>%
+    ungroup()
+  
+  # Z$X_tips_dummy_6 <- model.matrix(~0 + tips_dummy_6, mf$observations$full_obs %>% filter(survtype == "DHS"))
+  # Z$X_tips_dummy_7 <- model.matrix(~0 + tips_dummy_7, mf$observations$full_obs %>% filter(survtype == "DHS"))
+  # Z$X_tips_dummy_8 <- model.matrix(~0 + tips_dummy_8, mf$observations$full_obs %>% filter(survtype == "DHS"))
+  
   Z <- list()
   Z$Z_spatial <- if(naomi_level != 0) Matrix::sparse.model.matrix(~0 + area_id, mf$mf_model) else Matrix::sparse.model.matrix(~0)
   Z$Z_age <- Matrix::sparse.model.matrix(~0 + age_group, mf$mf_model)
+  
   Z$Z_period <- Matrix::sparse.model.matrix(~0 + period, mf$mf_model)
+  x <- 0:25
+  k <- seq(-15, 40, by = 5)
+  spline_mat <- splines::splineDesign(k, x, ord = 4)
+  spline_mat <- as(spline_mat, "sparseMatrix")
+  Z$Z_period <- Z$Z_period %*% spline_mat
+  
   Z$Z_country <- methods::as(matrix(rep(1, nrow(mf$mf_model)), ncol = 1), "dgCMatrix")
 
   # Z$Z_tips <- sparse.model.matrix(~0 + tips_f, mf$observations$full_obs)
   Z$Z_tips_dhs <- Matrix::sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
   Z$Z_tips_ais <- Matrix::sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% dplyr::filter(survtype %in% c("AIS", "MIS")))
-  Z$X_tips_dummy <- model.matrix(~0 + tips_dummy, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
-  Z$X_tips_dummy_10 <- model.matrix(~0 + tips_dummy_10, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
-  Z$X_tips_dummy_9_11 <- model.matrix(~0 + tips_dummy_9_11, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
+  # Z$X_tips_dummy <- model.matrix(~0 + tips_dummy, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
+  # Z$X_tips_dummy_10 <- model.matrix(~0 + tips_dummy_10, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
+  # Z$X_tips_dummy_9_11 <- model.matrix(~0 + tips_dummy_9_11, mf$observations$full_obs %>% dplyr::filter(survtype == "DHS"))
+  
+  Z$X_tips_dummy_5 <- model.matrix(~0 + tips_dummy_5, mf$observations$full_obs %>% filter(survtype == "DHS"))
+  Z$X_tips_fe <- sparse.model.matrix(~0 + tips_fe, mf$observations$full_obs)
+  Z$X_tips_fe[,1] <- 0
+  clear_col <- as.integer(unique(filter(mf$observations$full_obs, tips_fe == 0)$id.zeta2))
+  Z$Z_zeta2 <- sparse.model.matrix(~0 + id.zeta2, mf$observations$full_obs)
+  Z$Z_zeta2[,clear_col] <- 0
+  
   Z$X_urban_dummy <- model.matrix(~0 + urban, mf$mf_model)
   Z$X_period <- methods::as(Matrix::as.matrix(mf_model$id.period), "dgTMatrix")
+  
+  
+  if(iso3 == "ZWE") {
+    
+    mf$mf_model <- mf$mf_model %>% 
+      mutate(spike_2010 = factor(ifelse(period %in% 2010:2011, id.period-14, 0))) %>%
+      left_join(areas %>% st_drop_geometry() %>% select(area_id, parent_area_id)) %>%
+      group_by(spike_2010, parent_area_id) %>%
+      mutate(id.iota1 = factor(cur_group_id()))
+    
+    Z$X_spike_2010 <- sparse.model.matrix(~0 + spike_2010, mf$mf_model)[,2:3]
+    Z$iota1 <- sparse.model.matrix(~0 + id.iota1, mf$mf_model)[,11:30]
+    
+  } else {
+    Z$X_spike_2010 <- as(diag(0,1), "dgTMatrix")
+  }
+  
 
   ais_join <- mf$observations$full_obs %>%
     dplyr::mutate(col_idx = dplyr::row_number()) %>%
@@ -411,6 +495,7 @@ make_model_frames_dev <- function(iso3_c,
   R$R_period <- make_rw_structure_matrix(ncol(Z$Z_period), 2, adjust_diagonal = TRUE)
   R$R_country <- methods::as(diag(1, 1), "dgTMatrix")
   R$R_spatial_iid <- methods::as(diag(1, length(unique(mf$mf_model$area_id))), "dgTMatrix")
+  R$R_smooth_iid <- sparseMatrix(i = 1:nrow(mf$observations$full_obs), j = 1:nrow(mf$observations$full_obs), x = 1)
 
   mf$mics_toggle <- 0
 
@@ -800,7 +885,7 @@ make_tmb_inputs <- function(iso3, mf, naomi_level) {
     M_naomi_obs = mf$M_naomi_obs,
     M_full_obs = mf$M_full_obs,
     X_tips_dummy = mf$Z$X_tips_dummy,
-    X_tips_dummy_9_11 = mf$Z$X_tips_dummy_9_11,
+    # X_tips_dummy_9_11 = mf$Z$X_tips_dummy_9_11,
     X_tips_dummy_5 = mf$Z$X_tips_dummy_5,
     X_tips_fe = mf$Z$X_tips_fe,
     X_period = mf$Z$X_period,
@@ -826,7 +911,7 @@ make_tmb_inputs <- function(iso3, mf, naomi_level) {
     # Z_omega2 = sparse.model.matrix(~0 + id.omega2, mf$mf_model),
     Z_smooth_iid = sparse.model.matrix(~0 + id.smooth, mf$observations$full_obs),
     # Z_smooth_iid_ais = sparse.model.matrix(~0 + id.smooth, mf$observations$full_obs %>% filter(survtype %in% c("AIS", "MIS"))),
-    R_smooth_iid = R_smooth_iid,
+    R_smooth_iid = mf$R$R_smooth_iid,
     R_tips = mf$R$R_tips,
     R_tips_iid = as(diag(1, ncol(mf$Z$Z_tips_dhs)), "dgTMatrix"),
     # Z_zeta1 = sparse.model.matrix(~0 + id.zeta1, mf$observations$full_obs),
@@ -835,7 +920,7 @@ make_tmb_inputs <- function(iso3, mf, naomi_level) {
     R_survey = as(diag(1, length(unique(mf$observations$full_obs$survey_id))), "dgTMatrix"),
     R_age = mf$R$R_age,
     # R_period = make_rw_structure_matrix(ncol(mf$Z$Z_period), 1, adjust_diagonal = TRUE),
-    R_period = make_rw_structure_matrix(ncol(spline_mat), 1, adjust_diagonal = TRUE),
+    R_period = make_rw_structure_matrix(ncol(mf$Z$Z_period), 1, adjust_diagonal = TRUE),
     # R_spline_mat = spline_mat,
     R_spatial = mf$R$R_spatial,
     R_spatial_iid = mf$R$R_spatial_iid,
@@ -898,7 +983,7 @@ make_tmb_inputs <- function(iso3, mf, naomi_level) {
     # lag_logit_omega2_phi_period = 0,
     
     # u_period = rep(0, ncol(mf$Z$Z_period)),
-    u_period = rep(0, ncol(spline_mat)),
+    u_period = rep(0, ncol(mf$Z$Z_period)),
     log_prec_rw_period = 0,
     # logit_phi_period = 0,
     lag_logit_phi_period = 0,
@@ -906,7 +991,7 @@ make_tmb_inputs <- function(iso3, mf, naomi_level) {
     # beta_period = 0,
     
     log_prec_smooth_iid = 0,
-    u_smooth_iid = rep(0, ncol(R_smooth_iid)),
+    u_smooth_iid = rep(0, ncol(mf$R$R_smooth_iid)),
     
     # log_overdispersion = 0,
     
