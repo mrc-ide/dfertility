@@ -482,7 +482,7 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
       utils::type.convert(as.is = T) %>%
       dplyr::filter(period <= survyear) %>%
       # rename(age_group = agegr) %>%
-      dplyr::mutate(iso3 = iso3) %>%
+      dplyr::mutate(iso3 = iso3_c) %>%
       dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
       dplyr::select(-agegr, area_id = curr_area_id)
     
@@ -501,7 +501,7 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
         utils::type.convert(as.is = T) %>%
         dplyr::filter(period <= survyear) %>%
         # rename(age_group = agegr) %>%
-        dplyr::mutate(iso3 = iso3,
+        dplyr::mutate(iso3 = iso3_c,
                       variable = "asfr") %>%
         dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
         dplyr::select(-agegr, value = asfr, area_id = curr_area_id)
