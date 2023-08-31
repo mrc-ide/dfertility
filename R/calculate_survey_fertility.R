@@ -226,7 +226,7 @@ ir_by_area <- function(ir, area_list, n, total) {
 
 #' Calculate fertility rates from MICS data
 #' @export
-calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women, mapping) {
+calculate_mics_fertility <- function(iso3_c, mics_wm, mics_births_to_women, mapping) {
 
   mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
 
@@ -279,7 +279,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women, mappin
       dplyr::filter(period <= survyear) %>%
       # rename(age_group = agegr) %>%
       dplyr::mutate(survtype = "MICS",
-                    iso3 = iso3
+                    iso3 = iso3_c
       ) %>%
       dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
       dplyr::select(-agegr)
@@ -307,14 +307,14 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women, mappin
       dplyr::rename(value = asfr) %>%
       # rename(age_group = agegr) %>%
       dplyr::mutate(survtype = "MICS",
-                    iso3 = iso3,
+                    iso3 = iso3_c,
                     variable = "asfr"
       ) %>%
       dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
       dplyr::select(-agegr)
     
     mics_tfr_plot <- mics_asfr_plot %>%
-      dplyr::group_by(survey_id, period, area_id) %>%
+      dplyr::group_by(iso3, survey_id, period, area_id) %>%
       dplyr::summarise(value = 5 * sum(value),
                        pys = sum(pys)) %>%
       dplyr::mutate(variable = "tfr") %>%
@@ -507,7 +507,7 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
         dplyr::select(-agegr, value = asfr, area_id = curr_area_id)
       
       tfr_plot <- asfr_plot %>%
-        dplyr::group_by(survey_id, period, area_id) %>%
+        dplyr::group_by(iso3, survey_id, period, area_id) %>%
         dplyr::summarise(value = 5 * sum(value),
                          pys = sum(pys)) %>%
         dplyr::mutate(variable = "tfr") %>%
