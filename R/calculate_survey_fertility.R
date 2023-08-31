@@ -315,7 +315,7 @@ calculate_mics_fertility <- function(iso3, mics_wm, mics_births_to_women, mappin
     
     mics_tfr_plot <- mics_asfr_plot %>%
       dplyr::group_by(survey_id, period, area_id) %>%
-      dplyr::summarise(value = 5 * sum(value)m
+      dplyr::summarise(value = 5 * sum(value),
                        pys = sum(pys)) %>%
       dplyr::mutate(variable = "tfr") %>%
       dplyr::filter(value > 0.5)
