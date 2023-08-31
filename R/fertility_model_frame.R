@@ -118,7 +118,7 @@ make_adjacency_matrix <- function(areas, model_level) {
 #' @export
 #'
 
-make_model_frames_dev <- function(iso3,
+make_model_frames_dev <- function(iso3_c,
                               population,
                               asfr,
                               areas,
@@ -127,7 +127,7 @@ make_model_frames_dev <- function(iso3,
 
   areas_long <- areas %>%
     sf::st_drop_geometry() %>%
-    dplyr::mutate(iso3 = iso3)
+    dplyr::mutate(iso3 = iso3_c)
 
   # population <- population %>%
   #   mutate(period = as.numeric(year_labels(calendar_quarter_to_quarter_id(calendar_quarter)))) %>%
