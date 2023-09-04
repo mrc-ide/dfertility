@@ -16,7 +16,9 @@ get_fertility_surveys <- function(surveys, clusters) {
              survey_id = surveys$survey_id,
              iso3 = iso3_c,
              survyear = surveys$SurveyYear,
-             survtype = surveys$SurveyType)
+             survtype = surveys$SurveyType) %>%
+        select(c("survey_id", "survtype", "survyear", "v001", "v021", "caseid", "v011", "v008", "v005"), 
+               paste0("b3_", c(paste0(0, 1:9), 10:20)))
     }, ., dplyr::group_split(surveys, SurveyId))
   
   if(iso3_c == 'ETH') {
@@ -369,78 +371,6 @@ calculate_mics_fertility <- function(iso3_c, mics_wm, mics_births_to_women, mapp
 calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
 
   mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
-
-  # # cluster_list <- clusters %>%
-  # #   dplyr::rename(area_id = geoloc_area_id) %>%
-  # #   left_join(areas_wide) %>%
-  # #   dplyr::group_by(survey_id) %>%
-  # #   dplyr::group_split()
-  # 
-  # clusters <- clusters %>%
-  #   dplyr::rename(area_id = geoloc_area_id) %>%
-  #   left_join(areas_wide)
-  # 
-  # # names(cluster_list) <- surveys$survey_id
-  # 
-  # ir <- get_fertility_surveys(surveys)
-  # # names(ir$ir) <- names(cluster_list)
-  # # names(ir$nrow_ir) <- names(cluster_list)
-  # 
-  # if(iso3 == 'ETH') {
-  # 
-  #   adjust_eth_months <- function(ir) {
-  # 
-  #     col_positions <- grep("v011|v008|^b3\\_[0-9]*", colnames(ir))
-  #     ir <- ir %>%
-  #       dplyr::mutate(dplyr::across(col_positions, ~{.x+92}))
-  #   }
-  # 
-  #   ir$ir <- lapply(ir$ir, adjust_eth_months)
-  # 
-  # }
-
-  # dat <- map_ir_to_areas(ir$ir, cluster_list)
-  
-  # dat <- lapply(ir$ir, function(x) left_join(x, clusters, by = c("v001" = "cluster_id", "surveyid" = "survey_id")))
-
-  # cluster_level <- clusters %>%
-  #   dplyr::filter(!is.na(geoloc_area_id)) %>%
-  #   tidyr::separate(geoloc_area_id, into = c(NA, "area_level", NA), sep = c(4,5), remove = FALSE, convert = TRUE) %>%
-  #   dplyr::mutate(area_level = ifelse(geoloc_area_id == iso3, 0, area_level)) %>%
-  #   dplyr::group_by(area_level) %>%
-  #   dplyr::group_split()
-  # 
-  # get_admin1_clusters <- function(cluster_level) {
-  #   lvl <- unique(cluster_level$area_level)
-  # 
-  #   if(lvl > 1) {
-  #     cluster_level %>%
-  #       dplyr::left_join(areas_wide %>%
-  #                   sf::st_drop_geometry() %>%
-  #                   dplyr::select(area_id1, paste0("area_id", lvl)) %>%
-  #                   dplyr::distinct(),
-  #                 by = c("geoloc_area_id" = paste0("area_id", lvl))) %>%
-  #       dplyr::rename(area_id = area_id1) %>%
-  #       dplyr::select(survey_id, cluster_id, area_id)
-  #   } else {
-  #     cluster_level %>%
-  #       dplyr::rename(area_id = geoloc_area_id) %>%
-  #       dplyr::select(survey_id, cluster_id, area_id)
-  #   }
-  # }
-  # 
-  # cluster_list_admin1 <- lapply(cluster_level, get_admin1_clusters) %>%
-  #   dplyr::bind_rows() %>%
-  #   dplyr::ungroup() %>%
-  #   dplyr::group_by(survey_id) %>%
-  #   dplyr::group_split()
-  # 
-  # names(cluster_list_admin1) <- surveys$survey_id
-  # 
-  # dat_admin1 <- map_ir_to_areas(ir$ir, cluster_list_admin1, single_tips = FALSE)
-  # dat_admin1$ir <- lapply(dat_admin1$ir, zap_labels)
-  # 
-  # message("Calculating district-level ASFR")
   
   levels <- c(0, 
               mapping$admin1_level[mapping$iso3 == iso3_c],
@@ -450,6 +380,13 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
     area <- paste0("area_id", level)
     message(area)
     
+    # tst <- lapply(dat, function(x) {
+    #   x %>% 
+    #     select(c("survey_id", "survtype", "survyear", "v021", "caseid", "v011", "v008", "v005"), 
+    #            paste0("b3_", c(paste0(0, 1:9), 10:20)),
+    #            starts_with("area_id"))
+    # })
+    # 
     dat <- lapply(dat, function(x) {
       if(level == 0) {
         x %>%
@@ -457,15 +394,15 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
       } else {
         x <- x %>%
           rename_with(~"curr_area_id", paste(area)) %>%
-          mutate(curr_area_id = ifelse(is.na(curr_area_id), area_id, curr_area_id)) %>%
-          group_by(curr_area_id) %>%
-          group_split()
+          mutate(curr_area_id = ifelse(is.na(curr_area_id), area_id, curr_area_id))
+          # group_by(curr_area_id) %>%
+          # group_split()
       }
     })
     
-    if(level != 0) {
-      dat <- unlist(dat, recursive = F)
-    }
+    # if(level != 0) {
+    #   dat <- unlist(dat, recursive = F)
+    # }
     
     asfr <- parallel::mcMap(calc_asfr, 
                             # dat$ir,
@@ -485,10 +422,6 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
       dplyr::mutate(iso3 = iso3_c) %>%
       dplyr::left_join(naomi::get_age_groups() %>% dplyr::select(age_group, age_group_label), by = c("agegr" = "age_group_label")) %>%
       dplyr::select(-agegr, area_id = curr_area_id)
-    
-    filter_tips_df <- asfr %>%
-      distinct(survey_id, period) %>%
-      mutate(keep = T)
     
     if(length(grep(paste(c(0, levels[[2]]), collapse = "|"), level))) {
       asfr_plot <- parallel::mcMap(calc_asfr, 
@@ -517,9 +450,7 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
         dplyr::mutate(variable = "tfr") %>%
         dplyr::filter(value > 0.5)
       
-      plot <- bind_rows(asfr_plot, tfr_plot) %>%
-        left_join(filter_tips_df) %>%
-        filter(!is.na(keep))
+      plot <- bind_rows(asfr_plot, tfr_plot)
     } else {
       plot <- data.frame()
     }

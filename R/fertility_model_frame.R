@@ -503,6 +503,9 @@ make_model_frames_dev <- function(iso3_c,
     M_obs_mics <- Matrix::sparse.model.matrix(~0 + idx, mf$observations$full_obs %>% dplyr::filter(survtype == "MICS"))
     Z$Z_tips_mics <- Matrix::sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% dplyr::filter(survtype == "MICS"))
     R$R_tips_mics <- make_rw_structure_matrix(ncol(Z$Z_tips_mics), 1, adjust_diagonal = TRUE)
+    
+    mf$observations$mics_log_pys <- log(filter(mf$observations$full_obs, survtype == "MICS")$pys)
+    mf$observations$mics_log_births <- log(filter(mf$observations$full_obs, survtype == "MICS")$births)
     mf$mics_toggle <- 1
   }
 
@@ -819,6 +822,7 @@ make_model_frames_batch <- function(lvl_map,
     M_obs_mics <- Matrix::sparse.model.matrix(~0 + idx, mf$observations$full_obs %>% dplyr::filter(survtype == "MICS"))
     Z$Z_tips_mics <- Matrix::sparse.model.matrix(~0 + tips_f, mf$observations$full_obs %>% dplyr::filter(survtype == "MICS"))
     R$R_tips_mics <- make_rw_structure_matrix(ncol(Z$Z_tips_mics), 1, adjust_diagonal = TRUE)
+    
     mf$mics_toggle <- 1
   }
 
@@ -958,9 +962,8 @@ make_tmb_inputs <- function(iso3, mf, naomi_level) {
   tmb_int$par <- list(
     beta_0 = 0,
     
-    # beta_tips_dummy = rep(0, ncol(mf$Z$X_tips_dummy)),
-    beta_tips_dummy_5 = rep(0, ncol(mf$Z$X_tips_dummy_5)),
-    beta_tips_fe = rep(0, ncol(mf$Z$X_tips_fe)),
+    # beta_tips_dummy_5 = rep(0, ncol(mf$Z$X_tips_dummy_5)),
+    # beta_tips_fe = rep(0, ncol(mf$Z$X_tips_fe)),
     # beta_urban_dummy = rep(0, ncol(mf$Z$X_urban_dummy)),
     
     u_age = rep(0, ncol(mf$Z$Z_age)),
@@ -988,7 +991,7 @@ make_tmb_inputs <- function(iso3, mf, naomi_level) {
     # logit_phi_period = 0,
     lag_logit_phi_period = 0,
     # lag_logit_phi_arima_period = 0,
-    # beta_period = 0,
+    beta_period = 0,
     
     log_prec_smooth_iid = 0,
     u_smooth_iid = rep(0, ncol(mf$R$R_smooth_iid)),
@@ -1005,22 +1008,22 @@ make_tmb_inputs <- function(iso3, mf, naomi_level) {
                       "u_age",
                       "u_period",
                       "u_smooth_iid",
-                      # "beta_period",
-                      "beta_tips_dummy_5",
-                      "beta_tips_fe",
+                      "beta_period",
+                      # "beta_tips_dummy_5",
+                      # "beta_tips_fe",
                       "eta1"
   )
   
   if(naomi_level != 0) {
     tmb_int$par <- c(tmb_int$par,
-                     "u_spatial_str" = rep(0, ncol(mf$Z$Z_spatial)),
+                     "u_spatial_str" = list(rep(0, ncol(mf$Z$Z_spatial))),
                      "log_prec_spatial" = 0,
                      
-                     "eta2" = array(0, c(ncol(mf$Z$Z_spatial), ncol(mf$Z$Z_period))),
+                     "eta2" = list(array(0, c(ncol(mf$Z$Z_spatial), ncol(mf$Z$Z_period)))),
                      "log_prec_eta2" = 0,
                      "logit_eta2_phi_period" = 0,
                      # #
-                     "eta3" = array(0, c(ncol(mf$Z$Z_spatial), ncol(mf$Z$Z_age))),
+                     "eta3" = list(array(0, c(ncol(mf$Z$Z_spatial), ncol(mf$Z$Z_age)))),
                      "log_prec_eta3" = 0,
                      "logit_eta3_phi_age" = 0)
     
