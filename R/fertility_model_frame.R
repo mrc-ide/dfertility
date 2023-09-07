@@ -561,14 +561,14 @@ make_model_frames_dev <- function(iso3_c,
   return(mf)
 }
 
-#' Make model frames for batch running
-#' @description Create model frames and aggregation matrices for TMB model.
-#' @param population Age/sex/space stratified population
-#' @param asfr ASFRs by district and time
-#' @param areas_list List of area files
-#' @param lvl Dataframe of district and province levels
-#' @param project Model will by default produce estimates up to year of last survey. Integer projection year if desired, else FALSE
-#' @export
+# ' Make model frames for batch running
+# ' @description Create model frames and aggregation matrices for TMB model.
+# ' @param population Age/sex/space stratified population
+# ' @param asfr ASFRs by district and time
+# ' @param areas_list List of area files
+# ' @param lvl Dataframe of district and province levels
+# ' @param project Model will by default produce estimates up to year of last survey. Integer projection year if desired, else FALSE
+# ' 
 # 
 # make_model_frames_batch <- function(lvl_map,
 #                                     population,
