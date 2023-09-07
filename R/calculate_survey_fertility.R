@@ -17,8 +17,9 @@ get_fertility_surveys <- function(surveys, clusters) {
              iso3 = iso3_c,
              survyear = surveys$SurveyYear,
              survtype = surveys$SurveyType) %>%
-        select(c("survey_id", "survtype", "survyear", "v001", "v021", "caseid", "v011", "v008", "v005"), 
-               paste0("b3_", c(paste0(0, 1:9), 10:20)))
+        select(
+          all_of(c("survey_id", "survtype", "survyear", "v001", "v021", "caseid", "v011", "v008", "v005")), 
+          any_of(paste0("b3_", c(paste0(0, 1:9), 10:20))))
     }, ., dplyr::group_split(surveys, SurveyId))
   
   if(iso3_c == 'ETH') {
