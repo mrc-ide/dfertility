@@ -1,3 +1,12 @@
+#' Download individual level data for fertility analysis
+#' @description Download individual level DHS data for fertility analysis
+#' @param clusters Dataframe of geolocated survey clusters
+#' @param surveys Dataframe of DHS surveys
+#' @return List of individual-level data with clusters assigned to area IDs
+#' @importFrom dplyr %>%
+#' @importFrom rlang .data
+#' @export
+
 get_fertility_surveys <- function(surveys, clusters) {
 
   ird <- rdhs::dhs_datasets(fileType = "IR", fileFormat = "flat", surveyIds = surveys$SurveyId)
