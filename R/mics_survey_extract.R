@@ -4,23 +4,29 @@
 
 create_surveys_mics <- function(iso3, mics_indicators) {
 
-  sharepoint <- spud::sharepoint$new(Sys.getenv("SHAREPOINT_URL"))
-  folder <- sharepoint$folder(site = Sys.getenv("SHAREPOINT_SITE"), path = Sys.getenv("MICS_ORDERLY_PATH"))
-
-  mics_file_names <- folder$list() %>%
-    dplyr::filter(stringr::str_detect(name, tolower(iso3))) %>%
-    .$name %>%
-    sort()
-
-  mics_survey_names <- toupper(stringr::str_replace(mics_file_names, ".rds", ""))
-
-  mics_file_names <- lapply(tolower(unique(dplyr::filter(mics_indicators, survey_id %in% mics_survey_names)$survey_id)),
-         grep, x = mics_file_names, value = TRUE
-  ) %>%
-    unlist() %>%
-    sort()
-
-
+  # sharepoint <- spud::sharepoint$new(Sys.getenv("SHAREPOINT_URL"))
+  # folder <- sharepoint$folder(site = Sys.getenv("SHAREPOINT_SITE"), path = Sys.getenv("MICS_ORDERLY_PATH"))
+  # 
+  # mics_file_names <- folder$list() %>%
+  #   dplyr::filter(stringr::str_detect(name, tolower(iso3))) %>%
+  #   .$name %>%
+  #   sort()
+  #  
+  # mics_survey_names <- toupper(stringr::str_replace(mics_file_names, ".rds", ""))
+  # 
+  #   mics_file_names <- lapply(tolower(unique(dplyr::filter(mics_indicators, survey_id %in% mics_survey_names)$survey_id)),
+  #          grep, x = mics_file_names, value = TRUE
+  #   ) %>%
+  #     unlist() %>%
+  #     sort()
+  
+  path <- "~/Imperial College London/HIV Inference Group - WP - Documents/Data/household surveys/MICS/datasets/archive/mics_rds/20220112-013554-d0ff0834/mics_datasets_rds"
+  files <- grep(tolower(iso3), list.files(path, full.names = T), value = T)
+  mics_survey_names <- toupper(str_sub(files, 172, -5))
+  names(files) <- mics_survey_names
+  mics_survey_names <- mics_survey_names[mics_survey_names %in% unique(mics_indicators$survey_id)]
+  files <- files[mics_survey_names]
+  
   rename_datasets_key <- mics_indicators %>%
     dplyr::filter(survey_id %in% mics_survey_names) %>%
     dplyr::filter(label == "dataset name") %>%
@@ -28,9 +34,8 @@ create_surveys_mics <- function(iso3, mics_indicators) {
     dplyr::group_by(survey_id) %>%
     dplyr::group_split()
 
-  paths <- file.path("sites", Sys.getenv("SHAREPOINT_SITE"), Sys.getenv("MICS_ORDERLY_PATH"), mics_file_names)
-
-  files <- lapply(paths, spud::sharepoint_download, sharepoint_url = Sys.getenv("SHAREPOINT_URL"))
+  # paths <- file.path("sites", Sys.getenv("SHAREPOINT_SITE"), Sys.getenv("MICS_ORDERLY_PATH"), mics_file_names)
+  # files <- lapply(paths, spud::sharepoint_download, sharepoint_url = Sys.getenv("SHAREPOINT_URL"))
 
   mics_dat <- lapply(files, readRDS)
 
@@ -122,6 +127,7 @@ transform_mics <- function(mics_survey_data, mics_indicators) {
     lapply("[[", "hh") %>%
     lapply(function(x) {
       x %>%
+        haven::zap_labels() %>%
         dplyr::left_join(data.frame(mics_area_name = attr(x$mics_area_name, "labels"),
                              mics_area_name_label = stringr::str_to_title(
                                names(attr(x$mics_area_name, "labels")))
