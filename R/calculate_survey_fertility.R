@@ -238,36 +238,74 @@ ir_by_area <- function(ir, area_list, n, total) {
 
 #' Calculate fertility rates from MICS data
 #' @export
-calculate_mics_fertility <- function(iso3_c, mics_wm, mics_births_to_women, mapping) {
+calculate_mics_fertility <- function(iso3_c, mics_wm, mics_births_to_women, mapping, areas) {
 
   mc.cores <- if(.Platform$OS.type == "windows") 1 else parallel::detectCores()
+  
+  levels <- c(0, 
+              mapping$admin1_level[mapping$iso3 == iso3_c],
+              mapping$fertility_fit_level[mapping$iso3 == iso3_c])
+  
+  areas_wide <- spread_areas(areas)
 
   mics_wm_asfr <- mics_wm %>%
     utils::type.convert(as.is = T) %>%
     dplyr::mutate(survey_id = factor(survey_id),
-           area_id = factor(area_id))
+           area_id = factor(area_id)) %>%
+    left_join(areas %>% select(area_id, area_level) %>% st_drop_geometry())
+  
+  mics_high_admin <- mics_wm_asfr %>%
+    filter(area_level > 1) %>%
+    group_by(area_level) %>%
+    group_split()
+  
+  mics_high_admin <- mics_high_admin %>%
+    lapply(function(x) {
+      level <- unique(x$area_level)
+      col_name <- paste0("area_id", level)
+      x %>%
+        rename_with(~paste(col_name), "area_id") %>%
+        left_join(areas_wide %>% select(all_of(col_name), area_id1) %>% st_drop_geometry()) %>%
+        rename_with(~"area_id", paste(col_name))
+    }) %>%
+    bind_rows()
+  
+  mics_wm_asfr <- mics_wm_asfr %>%
+    filter(area_level %in% c(0,1)) %>%
+    mutate(area_id1 = area_id) %>%
+    bind_rows(mics_high_admin)
 
   mics_births_asfr <- mics_births_to_women %>%
     dplyr::left_join(mics_wm) %>%
     dplyr::mutate(survey_id = factor(survey_id),
-           area_id = factor(area_id))
+           area_id = factor(area_id)) %>%
+    left_join(mics_wm_asfr %>% select(area_id, area_id1) %>% distinct())
   
-  calculate_mics_fr <- function(level, mics_wm_asfr, mics_births_asfr) {
+  calculate_mics_fr <- function(curr_level, levels, mics_wm_asfr, mics_births_asfr) {
     
-    if(level == 0) {
+    if(curr_level == 0) {
       mics_wm_asfr$area_id <- iso3_c
       mics_births_asfr$area_id <- iso3_c
+    } else if(curr_level == levels[2]) {
+      
+      mics_births_asfr <- mics_births_asfr %>%
+        select(-area_id) %>%
+        rename(area_id = area_id1)
+      
+      mics_wm_asfr <- mics_wm_asfr %>%
+        select(-area_id) %>%
+        rename(area_id = area_id1)
     }
-    
+      
     mics_births_asfr <- mics_births_asfr %>%
-      dplyr::arrange(survey_id, area_id) %>%
-      dplyr::group_by(survey_id, area_id) %>%
-      dplyr::group_split()
-    
+        dplyr::arrange(survey_id, area_id) %>%
+        dplyr::group_by(survey_id, area_id) %>%
+        dplyr::group_split()
+      
     mics_wm_asfr <- mics_wm_asfr %>%
-      dplyr::arrange(survey_id, area_id) %>%
-      dplyr::group_by(survey_id, area_id) %>%
-      dplyr::group_split()
+        dplyr::arrange(survey_id, area_id) %>%
+        dplyr::group_by(survey_id, area_id) %>%
+        dplyr::group_split()
     
     mics_asfr <- parallel::mcMap(calc_asfr, mics_wm_asfr,
                                  by = list(~area_id + survey_id),
@@ -341,9 +379,9 @@ calculate_mics_fertility <- function(iso3_c, mics_wm, mics_births_to_women, mapp
     
   }
   
-  mics_fr <- lapply(c(0, 1), calculate_mics_fr, mics_wm_asfr, mics_births_asfr)
+  mics_fr <- lapply(levels, calculate_mics_fr, levels, mics_wm_asfr, mics_births_asfr)
   
-  names(mics_fr) <- c("national", "provincial")
+  names(mics_fr) <- c("national", "provincial", "district")
   
   mics_fr
 
@@ -404,15 +442,15 @@ calculate_dhs_fertility <- function(iso3_c, dat, mapping) {
       } else {
         x <- x %>%
           rename_with(~"curr_area_id", paste(area)) %>%
-          mutate(curr_area_id = ifelse(is.na(curr_area_id), area_id, curr_area_id))
-          # group_by(curr_area_id) %>%
-          # group_split()
+          mutate(curr_area_id = ifelse(is.na(curr_area_id), area_id, curr_area_id)) %>%
+          group_by(curr_area_id) %>%
+          group_split()
       }
     })
     
-    # if(level != 0) {
-    #   dat <- unlist(dat, recursive = F)
-    # }
+    if(level != 0) {
+      dat <- unlist(dat, recursive = F)
+    }
     
     asfr <- parallel::mcMap(calc_asfr, 
                             # dat$ir,
