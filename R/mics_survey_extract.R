@@ -227,7 +227,10 @@ make_asfr_inputs <- function(mics_survey_areas, mics_survey_data) {
   df <- list()
 
   df$wm <- dat$wm %>%
-    dplyr::left_join(dat$hh %>% dplyr::select(survey_id, cluster, hh_number, area_id))
+    dplyr::left_join(dat$hh %>% 
+                       ungroup() %>% 
+                       dplyr::select(survey_id, cluster, area_id) %>%
+                       distinct())
 
   df$births_to_women <- dat$wm %>%
     dplyr::select(survey_id, cluster, hh_number, line_number, unique_id) %>%
