@@ -265,7 +265,7 @@ calculate_mics_fertility <- function(iso3_c, mics_wm, mics_births_to_women, mapp
       col_name <- paste0("area_id", level)
       x %>%
         rename_with(~paste(col_name), "area_id") %>%
-        left_join(areas_wide %>% select(all_of(col_name), area_id1) %>% st_drop_geometry()) %>%
+        left_join(areas_wide %>% select(all_of(col_name), area_id1) %>% st_drop_geometry() %>% distinct()) %>%
         rename_with(~"area_id", paste(col_name))
     }) %>%
     bind_rows()
