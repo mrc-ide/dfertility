@@ -436,7 +436,13 @@ make_model_frames_dev <- function(iso3_c,
     mutate(all_tips_fe = factor(ifelse(is.na(all_tips_fe), 9999, all_tips_fe)))
 
   Z$X_tips_fe <- sparse.model.matrix(~0 + all_tips_fe, mf$observations$full_obs)
-  Z$X_tips_fe <- Z$X_tips_fe[, 1:(ncol(Z$X_tips_fe)-1)]
+
+  if(ncol(Z$X_tips_fe) == 2) {
+    Z$X_tips_fe <- Z$X_tips_fe[, 1]
+    Z$X_tips_fe <- as(matrix(Z$X_tips_fe, ncol = 1), "dgTMatrix")
+  } else {
+    Z$X_tips_fe <- Z$X_tips_fe[, 1:(ncol(Z$X_tips_fe)-1)]
+  }
   # Z$X_tips_fe[,1] <- 0
 
   # clear_col <- as.integer(unique(filter(mf$observations$full_obs, is.na(all_tips_fe))$id.zeta2))
