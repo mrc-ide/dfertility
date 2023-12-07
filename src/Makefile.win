@@ -1,6 +1,6 @@
-# all: model7.dll model7_eth.dll model7_mwi.dll model7_zwe.dll model7_rwa.dll model7_ssd_caf.dll	## Comment here preserves the prior tab
-# model7.dll: model7.cpp
-# 	Rscript --vanilla -e "TMB::compile('model7.cpp', '-O1 -g',DLLFLAGS='')"
+all: 2023_09_11_all_levels.dll 	## Comment here preserves the prior tab	
+2023_09_11_all_levels.dll: 2023_09_11_all_levels.cpp
+	Rscript --vanilla -e "TMB::compile('2023_09_11_all_levels.cpp', '-O1 -g',DLLFLAGS='')"
 # model7_eth.dll: model7_eth.cpp
 # 	Rscript --vanilla -e "TMB::compile('model7_eth.cpp', '-O1 -g',DLLFLAGS='')"
 # model7_mwi.dll: model7_mwi.cpp
