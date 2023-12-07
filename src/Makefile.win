@@ -1,16 +1,16 @@
-all: model7.dll model7_eth.dll model7_mwi.dll model7_zwe.dll model7_rwa.dll model7_ssd_caf.dll	## Comment here preserves the prior tab
-model7.dll: model7.cpp
-	Rscript --vanilla -e "TMB::compile('model7.cpp', '-O1 -g',DLLFLAGS='')"
-model7_eth.dll: model7_eth.cpp
-	Rscript --vanilla -e "TMB::compile('model7_eth.cpp', '-O1 -g',DLLFLAGS='')"
-model7_mwi.dll: model7_mwi.cpp
-	Rscript --vanilla -e "TMB::compile('model7_mwi.cpp', '-O1 -g',DLLFLAGS='')"
-model7_zwe.dll: model7_zwe.cpp
-	Rscript --vanilla -e "TMB::compile('model7_zwe.cpp', '-O1 -g',DLLFLAGS='')"
-model7_rwa.dll: model7_rwa.cpp
-	Rscript --vanilla -e "TMB::compile('model7_rwa.cpp', '-O1 -g',DLLFLAGS='')"
-model7_ssd_caf.dll: model7_ssd_caf.cpp
-	Rscript --vanilla -e "TMB::compile('model7_ssd_caf.cpp', '-O1 -g',DLLFLAGS='')"
+# all: model7.dll model7_eth.dll model7_mwi.dll model7_zwe.dll model7_rwa.dll model7_ssd_caf.dll	## Comment here preserves the prior tab
+# model7.dll: model7.cpp
+# 	Rscript --vanilla -e "TMB::compile('model7.cpp', '-O1 -g',DLLFLAGS='')"
+# model7_eth.dll: model7_eth.cpp
+# 	Rscript --vanilla -e "TMB::compile('model7_eth.cpp', '-O1 -g',DLLFLAGS='')"
+# model7_mwi.dll: model7_mwi.cpp
+# 	Rscript --vanilla -e "TMB::compile('model7_mwi.cpp', '-O1 -g',DLLFLAGS='')"
+# model7_zwe.dll: model7_zwe.cpp
+# 	Rscript --vanilla -e "TMB::compile('model7_zwe.cpp', '-O1 -g',DLLFLAGS='')"
+# model7_rwa.dll: model7_rwa.cpp
+# 	Rscript --vanilla -e "TMB::compile('model7_rwa.cpp', '-O1 -g',DLLFLAGS='')"
+# model7_ssd_caf.dll: model7_ssd_caf.cpp
+# 	Rscript --vanilla -e "TMB::compile('model7_ssd_caf.cpp', '-O1 -g',DLLFLAGS='')"
 
 clean:
 	rm -rf *.dll
