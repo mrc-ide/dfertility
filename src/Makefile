@@ -1,7 +1,7 @@
-all: 2023_09_11_all_levels.so 
+all: 2024_01_17_triple.so 
 # model7_eth.so model7_mwi.so	model7_zwe.so model7_rwa.so model7_ssd_caf.so ## Comment here preserves the prior tab
-2023_09_11_all_levels.so: 2023_09_11_all_levels.cpp
-	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('2023_09_11_all_levels.cpp', '-O1 -g',DLLFLAGS='')"
+2024_01_17_triple.so: 2024_01_17_triple.cpp
+	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('2024_01_17_triple.cpp', '-O1 -g',DLLFLAGS='')"
 # 2023_09_11_subnational.so: 2023_09_11_subnational.cpp
 # 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('2023_09_11_subnational.cpp', '-O1 -g',DLLFLAGS='')"
 # model7_eth.so: model7_eth.cpp

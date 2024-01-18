@@ -184,7 +184,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(u_period);
 
 
-  nll -= dnorm(log_prec_rw_period, Type(6.3), Type(0.5), true);
+  nll -= dnorm(log_prec_rw_period, Type(6), Type(1), true);
   // nll -= dnorm(log_prec_rw_period, Type(6.3), Type(2.5), true);
   Type prec_rw_period = exp(log_prec_rw_period);
   // nll -= dgamma(prec_rw_period, Type(1), Type(2000), true);
@@ -216,7 +216,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER(lag_logit_phi_arima_period);
 
   PARAMETER_VECTOR(beta_period);
-  nll -= dnorm(beta_period, Type(-0.01309), Type(0.01441), true).sum();
+  // nll -= dnorm(beta_period, Type(-0.01309), Type(0.01441), true).sum();
+  nll -= dnorm(beta_period, Type(0), Type(sqrt(1/0.001)), true).sum();
+
 
   nll -= dnorm(lag_logit_phi_arima_period, Type(0), Type(sqrt(1/0.15)), true);
   Type phi_arima_period = 2*exp(lag_logit_phi_arima_period)/(1+exp(lag_logit_phi_arima_period))-1;
@@ -268,11 +270,11 @@ Type objective_function<Type>::operator() ()
   // Type eta1_phi_period = 2*exp(lag_logit_eta1_phi_period)/(1+exp(lag_logit_eta1_phi_period))-1;
   ///////////
 
-  // Type prec_eta1 = exp(log_prec_eta1);
-  // nll -= dgamma(prec_eta1, Type(1), Type(2000), true);
-
-  nll -= dnorm(log_prec_eta1, Type(3), Type(0.5), true);
   Type prec_eta1 = exp(log_prec_eta1);
+  nll -= dgamma(prec_eta1, Type(1), Type(2000), true);
+
+  // nll -= dnorm(log_prec_eta1, Type(3), Type(0.5), true);
+  // Type prec_eta1 = exp(log_prec_eta1);
 
   Type eta1_phi_age(exp(logit_eta1_phi_age)/(1+exp(logit_eta1_phi_age)));
   nll -= log(eta1_phi_age) +  log(1 - eta1_phi_age); // Jacobian adjustment for inverse logit'ing the parameter...
@@ -283,7 +285,7 @@ Type objective_function<Type>::operator() ()
   // nll -= dbeta(eta1_phi_period, Type(0.5), Type(0.5), true);
   nll -= dnorm(eta1_phi_period, Type(1.5), Type(0.2), true);
 
-  nll += SEPARABLE(AR1(Type(eta1_phi_age)), SEPARABLE(AR1(Type(eta1_phi_period)), GMRF(R_country)))(eta1);
+  nll += SEPARABLE(AR1(Type(eta1_phi_age)), SEPARABLE(AR1(Type(eta1_phi_period)), GMRF(R_spatial)))(eta1);
   vector<Type> eta1_v(eta1);
 
   //Smooth iid
@@ -346,9 +348,9 @@ Type objective_function<Type>::operator() ()
       ///////////////////
      // ETA-2 - Space x time interaction
   //
-    PARAMETER_ARRAY(eta2);
-    PARAMETER(log_prec_eta2);
-    PARAMETER(logit_eta2_phi_period);
+    // PARAMETER_ARRAY(eta2);
+    // PARAMETER(log_prec_eta2);
+    // PARAMETER(logit_eta2_phi_period);
 
 
 
@@ -366,30 +368,44 @@ Type objective_function<Type>::operator() ()
     // Type prec_eta2 = exp(log_prec_eta2);
     // nll -= dgamma(prec_eta2, Type(1), Type(2000), true);
 
-    nll -= dnorm(log_prec_eta2, Type(5), Type(0.1), true);
-    Type prec_eta2 = exp(log_prec_eta2);
+    // nll -= dnorm(log_prec_eta2, Type(6.5), Type(0.1), true);
+    // Type prec_eta2 = exp(log_prec_eta2);
 
-    Type eta2_phi_period(exp(logit_eta2_phi_period)/(1+exp(logit_eta2_phi_period)));
-    nll -= log(eta2_phi_period) +  log(1 - eta2_phi_period); // Jacobian adjustment for inverse logit'ing the parameter...
-    nll -= dbeta(eta2_phi_period, Type(0.5), Type(0.5), true);
+    // Type eta2_phi_period(exp(logit_eta2_phi_period)/(1+exp(logit_eta2_phi_period)));
+    // nll -= log(eta2_phi_period) +  log(1 - eta2_phi_period); // Jacobian adjustment for inverse logit'ing the parameter...
+    // nll -= dbeta(eta2_phi_period, Type(0.5), Type(0.5), true);
     // Type eta2_phi_period = 0.99;
 
-    nll += SEPARABLE(AR1(Type(eta2_phi_period)), GMRF(R_spatial))(eta2);
+    // nll += SEPARABLE(AR1(Type(eta2_phi_period)), GMRF(R_spatial))(eta2);
 
-    Type log_det_Qar1_eta2((eta2.cols() - 1) * log(1 - eta2_phi_period * eta2_phi_period));
-    nll -= rankdef_R_spatial * 0.5 * (log_det_Qar1_eta2 - log(2 * PI));
+    // Type log_det_Qar1_eta2((eta2.cols() - 1) * log(1 - eta2_phi_period * eta2_phi_period));
+    // nll -= rankdef_R_spatial * 0.5 * (log_det_Qar1_eta2 - log(2 * PI));
 
-    for (int i = 0; i < eta2.cols(); i++) {
-      nll -= dnorm(eta2.col(i).sum(), Type(0), Type(0.01) * eta2.col(i).size(), true);}
+    // for (int i = 0; i < eta2.cols(); i++) {
+    //   nll -= dnorm(eta2.col(i).sum(), Type(0), Type(0.01) * eta2.col(i).size(), true);}
 
-    vector<Type> eta2_v(eta2);
+    // vector<Type> eta2_v(eta2);
+
+    DATA_SPARSE_MATRIX(Z_period_area);
+    PARAMETER_VECTOR(u_period_area);
+    PARAMETER(log_prec_period_area);
+
+    nll -= dlgamma(log_prec_period_area, Type(1), Type(2000), true);
+    Type prec_period_area = exp(log_prec_period_area);
+
+    // nll -= dnorm(log_prec_period_area, Type(9.5), Type(0.1), true);
+    // Type prec_period_area = exp(log_prec_period_area);
+
+
+    nll -= Type(-0.5) * (u_period_area * (R_spatial * u_period_area)).sum();
+    nll -= dnorm(u_period_area.sum(), Type(0), Type(0.01) * u_period_area.size(), 1);
 
 
     ////////////////////
 
-    PARAMETER_ARRAY(eta3);
-    PARAMETER(log_prec_eta3);
-    PARAMETER(logit_eta3_phi_age);
+    // PARAMETER_ARRAY(eta3);
+    // PARAMETER(log_prec_eta3);
+    // PARAMETER(logit_eta3_phi_age);
 
     // nll -= dnorm(log_prec_eta3, Type(2.47668668), Type(0.06081623), true);
     // nll -= dnorm(lag_logit_eta3_phi_age, Type(3.66116349), Type(0.09653723), true);
@@ -398,27 +414,28 @@ Type objective_function<Type>::operator() ()
     // nll -= dnorm(lag_logit_eta3_phi_age, Type(0), Type(sqrt(1/0.15)), true);
     // Type eta3_phi_age = 2*exp(lag_logit_eta3_phi_age)/(1+exp(lag_logit_eta3_phi_age))-1;
 
-    Type prec_eta3 = exp(log_prec_eta3);
-    nll -= dgamma(prec_eta3, Type(1), Type(2000), true);
+    // Type prec_eta3 = exp(log_prec_eta3);
+    // nll -= dgamma(prec_eta3, Type(1), Type(2000), true);
 
-    Type eta3_phi_age(exp(logit_eta3_phi_age)/(1+exp(logit_eta3_phi_age)));
-    nll -= log(eta3_phi_age) +  log(1 - eta3_phi_age); // Jacobian adjustment for inverse logit'ing the parameter...
-    nll -= dbeta(eta3_phi_age, Type(0.5), Type(0.5), true);
+    // Type eta3_phi_age(exp(logit_eta3_phi_age)/(1+exp(logit_eta3_phi_age)));
+    // nll -= log(eta3_phi_age) +  log(1 - eta3_phi_age); // Jacobian adjustment for inverse logit'ing the parameter...
+    // nll -= dbeta(eta3_phi_age, Type(0.5), Type(0.5), true);
 
-    nll += SEPARABLE(AR1(Type(eta3_phi_age)), GMRF(R_spatial))(eta3);
+    // nll += SEPARABLE(AR1(Type(eta3_phi_age)), GMRF(R_spatial))(eta3);
 
-    Type log_det_Qar1_eta3((eta3.cols() - 1) * log(1 - eta3_phi_age * eta3_phi_age));
-    nll -= rankdef_R_spatial * 0.5 * (log_det_Qar1_eta3 - log(2 * PI));
+    // Type log_det_Qar1_eta3((eta3.cols() - 1) * log(1 - eta3_phi_age * eta3_phi_age));
+    // nll -= rankdef_R_spatial * 0.5 * (log_det_Qar1_eta3 - log(2 * PI));
 
-    for (int i = 0; i < eta3.cols(); i++) {
-      nll -= dnorm(eta3.col(i).sum(), Type(0), Type(0.01) * eta3.col(i).size(), true);}
+    // for (int i = 0; i < eta3.cols(); i++) {
+    //   nll -= dnorm(eta3.col(i).sum(), Type(0), Type(0.01) * eta3.col(i).size(), true);}
 
-    vector<Type> eta3_v(eta3);
+    // vector<Type> eta3_v(eta3);
 
     log_lambda = log_lambda
                   + Z_spatial * u_spatial_str * sqrt(1/prec_spatial)
-                  + Z_interaction2 * eta2_v * sqrt(1/prec_eta2)
-                  + Z_interaction3 * eta3_v * sqrt(1/prec_eta3);
+                  + Z_period_area * u_period_area * sqrt(1/prec_period_area);
+                  // + Z_interaction2 * eta2_v * sqrt(1/prec_eta2)
+                  // + Z_interaction3 * eta3_v * sqrt(1/prec_eta3);
 
   }
 
@@ -429,7 +446,22 @@ Type objective_function<Type>::operator() ()
     PARAMETER_VECTOR(beta_urban_dummy);
     nll -= dnorm(beta_urban_dummy, Type(0), Type(sqrt(1/0.001)), true).sum();
 
-    log_lambda = log_lambda + (X_urban_dummy * beta_urban_dummy);
+    // PARAMETER_VECTOR(u_urban_iid);
+    // PARAMETER(log_prec_urban_iid);
+    // DATA_SPARSE_MATRIX(R_urban_iid);
+    // DATA_SPARSE_MATRIX(Z_urban_iid);
+
+    // Type prec_urban_iid = exp(log_prec_urban_iid);
+    // nll -= dgamma(prec_urban_iid, Type(1), Type(2000), true);
+
+    // nll -= dnorm(log_prec_urban_iid, Type(5), Type(1), true);
+    // Type prec_urban_iid = exp(log_prec_urban_iid);
+
+    // nll -= Type(-0.5) * (u_urban_iid * (R_urban_iid * u_urban_iid)).sum();
+
+    log_lambda = log_lambda 
+                    + X_urban_dummy * beta_urban_dummy;
+                    // + Z_urban_iid * u_urban_iid + sqrt(1/prec_urban_iid);
 
   }
 

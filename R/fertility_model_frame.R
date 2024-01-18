@@ -153,6 +153,7 @@ make_model_frames_dev <- function(iso3_c,
   #   mutate(population = ifelse(is.nan(population), 0, population))
 
   areas <- dplyr::filter(areas, area_level <= naomi_level)
+  areas_wide <- naomi::spread_areas(areas)
 
   if(naomi_level != 0) {
     area_tree <- naomi::create_areas(area_merged = areas %>% mutate(display = T))
