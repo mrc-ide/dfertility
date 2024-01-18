@@ -1,6 +1,6 @@
-all: 2024_01_17_triple.dll 	## Comment here preserves the prior tab	
-2024_01_17_triple.dll: 2024_01_17_triple.cpp
-	Rscript --vanilla -e "TMB::compile('2024_01_17_triple.cpp', '-O1 -g',DLLFLAGS='')"
+all: triple.dll 	## Comment here preserves the prior tab	
+triple.dll: triple.cpp
+	Rscript --vanilla -e "TMB::compile('triple.cpp', '-O1 -g',DLLFLAGS='')"
 # model7_eth.dll: model7_eth.cpp
 # 	Rscript --vanilla -e "TMB::compile('model7_eth.cpp', '-O1 -g',DLLFLAGS='')"
 # model7_mwi.dll: model7_mwi.cpp

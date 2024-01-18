@@ -17,5 +17,5 @@ export(transform_mics)
 importFrom(dplyr,"%>%")
 importFrom(rlang,.data)
 exportPattern("^[[:alpha:]]+")
-useDynLib(dfertility, .registration = TRUE)
+useDynLib(triple, .registration = TRUE)
 
