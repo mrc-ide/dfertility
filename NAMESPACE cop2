@@ -1,3 +1,5 @@
 exportPattern("^[[:alpha:]]+")
 useDynLib(dfertility, .registration = TRUE)
 useDynLib(2023_09_11_subnational)
+
+useDynLib(triple, .registration = TRUE)
