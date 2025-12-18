@@ -1,7 +1,7 @@
-all: triple.so 
+all: dfertility.so 
 # model7_eth.so model7_mwi.so	model7_zwe.so model7_rwa.so model7_ssd_caf.so ## Comment here preserves the prior tab
-triple.so: triple.cpp
-	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('triple.cpp', '-O1 -g',DLLFLAGS='')"
+dfertility.so: dfertility.cpp
+	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('dfertility.cpp', '-O1 -g',DLLFLAGS='')"
 # 2023_09_11_subnational.so: 2023_09_11_subnational.cpp
 # 	"$(R_HOME)/bin/Rscript" --vanilla -e "TMB::compile('2023_09_11_subnational.cpp', '-O1 -g',DLLFLAGS='')"
 # model7_eth.so: model7_eth.cpp

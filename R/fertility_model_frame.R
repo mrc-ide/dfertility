@@ -175,7 +175,7 @@ make_model_frames_dev <- function(iso3_c,
            age_group = factor(age_group, levels = unique(asfr$age_group)),
            period = factor(period),
            urban = ifelse(area_id %in% c(
-             dplyr::filter(areas_long, parent_area_id == "ETH_1_10")$area_id,
+             # dplyr::filter(areas_long, parent_area_id == "ETH_1_10")$area_id,
              dplyr::filter(areas_long, stringr::str_detect(area_name, "Town"))$area_id,
              dplyr::filter(areas_long, area_name %in% c("Harari", "Fafen (Jijiga)", "Erer"))$area_id),
              1, 0)
@@ -376,7 +376,7 @@ make_model_frames_dev <- function(iso3_c,
   #     ungroup()
   # }
 
-  zeta2_expansion <- crossing(select(mf$observations$full_obs, survey_id, survtype),
+  zeta2_expansion <- tidyr::crossing(select(mf$observations$full_obs, survey_id, survtype),
                               tips = c(0,5,6,10)) %>%
     mutate(all_tips_fe = case_when(
       tips == 0 ~ 1,
